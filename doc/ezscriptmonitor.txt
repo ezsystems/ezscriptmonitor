@@ -1,0 +1,84 @@
+EZ SCRIPT MONITOR
+-----------------
+Gunnstein Lye <gl@ez.no>
+April 28, 2009
+
+
+A page in the administration interface that lets administrators monitor the
+status of currently executing scripts. The purpose is to use this for the kind
+of operations that are too slow to be reliably executed in the browser, like
+addmissingobjectattributes.php and ezsubtreeremove.php. When these operations
+are moved to the background, timeouts are no longer an issue, and the user
+gets feedback about the progress.
+
+
+IMPLEMENTATION
+
+The implementation in its simplest form is a read only module that pulls all
+its information from a single sql table. This module is obviously trivial to
+implement.
+
+To make a script show up in the monitor some changes must be made per script.
+At reasonable intervals (no more than 5 minutes) they must update the
+monitoring table with their updated progress information. Many of the CLI
+scripts display progress information in the shell already, the same value can
+be used here. Some scripts may not be able to calculate their progress, they
+can report 999% which will be displayed as "unknown". Any script that can
+access the database can be monitored, not only PHP scripts. An update command
+wrapper can be made for scripts that can not easily access the database.
+
+We can add basic monitor support to all cronjobs and all PHP scripts without
+any changes to the scripts themselves - by making eZRunCronjobs and eZScript
+report startup and shutdown to the monitor table. Full monitoring, with
+progress information, requires modifications to each script.
+
+Scripts are supposed to report at least every 5 minutes. At update intervals
+less than this, they are considered delayed (yellow). After 15 minutes they
+are presumed dead (red). Scripts that are complete (100%) will be displayed
+until 5 minutes after the last update.
+
+This change should be quite simple to add to most scripts. The biggest problem
+is ensure that the updates are done at a reasonable interval (no less than say
+10 seconds, no more than 5 minutes). This is no exact science, some trial and
+error will be needed.
+
+Scripts without monitoring support will have no entry in the table and will
+thus not be displayed in the monitor. This lets us gradually introduce
+monitoring in our existing scripts.
+
+The script process ID must be unique in the table, so there will only be one
+entry per script. The table should be cleaned of old entries at reasonable
+intervals, by a cronjob.
+
+Scripts that must be run based on actions performed in the administration
+interface (like addmissingobjectattributes.php and ezsubtreeremove.php) should
+be configured by cron to run frequently. Ideal would be if they can be started
+immediately. It should not be possible for the user to attempt performing the
+action in the browser. On such actions the user should be informed that the
+action has been deferred to a cronjob, and there should be a link to the
+script monitor page.
+
+These changes to the administration interface are probably the biggest part of
+the work. Operations like class editing and subtree removal must be able to
+calculate their expected execution time (some, like subtree removal, already
+do this) and act accordingly. We can introduce these changes gradually. First
+in line should perhaps be class editing, because of its potential for major
+disasters.
+
+
+POSSIBLE FUTURE ENHANCEMENTS
+
+- Run scripts on demand, CLI access not needed
+- Scheduled execution of scripts
+- Pause/restart/stop/kill scripts
+- Display current system load
+- Cluster support/awareness
+
+
+ISSUES
+
+#010203: Changing classes with a lot of objects can result in a maximum execution time error
+http://issues.ez.no/10203
+
+#014133: Batch initialization of object attributes
+http://issues.ez.no/14133

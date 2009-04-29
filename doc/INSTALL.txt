@@ -1,0 +1,23 @@
+INSTALL
+-------
+Gunnstein Lye <gl@ez.no>
+v0.1
+
+1. Unpack the extension and place it in your extension directory (as with all
+   extensions).
+
+2. Set the site access you want the scheduler to run under, in
+   ezscriptmonitor.ini.append.php
+
+3. Set the path to your PHP CLI executable, in ezscriptmonitor.ini.append.php
+
+4. Insert the table into your database: sql/mysql/ezscriptmonitor.sql
+
+5. Setup the cronjob part "runscheduledscripts" to run often, every minute is
+   recommended.
+
+6. Enable the extension (as with all extensions).
+
+7. Apply the patches for those parts of the system you want script monitoring
+   for, see the patches directory. (Currently this is only possible for class
+   editing.) The patches are against current trunk, r23481.
