@@ -1,0 +1,268 @@
+Index: kernel/content/removeobject.php
+===================================================================
+--- kernel/content/removeobject.php	(revision 23534)
++++ kernel/content/removeobject.php	(working copy)
+@@ -35,6 +35,7 @@
+ 
+ $viewMode = $http->sessionVariable( "CurrentViewMode" );
+ $deleteIDArray = $http->sessionVariable( "DeleteIDArray" );
++$scheduleIDArray = $http->sessionVariable( 'ScheduleIDArray' );
+ $contentObjectID = $http->sessionVariable( 'ContentObjectID' );
+ $contentNodeID = $http->sessionVariable( 'ContentNodeID' );
+ 
+@@ -55,7 +56,7 @@
+ {
+     $contentLanguage = false;
+ }
+-if ( count( $deleteIDArray ) <= 0 )
++if ( count( $deleteIDArray ) <= 0 and count( $scheduleIDArray ) <= 0 )
+     return $Module->redirectToView( 'view', array( $viewMode, $contentNodeID, $contentLanguage ) );
+ 
+ // Cleanup and redirect back when cancel is clicked
+@@ -63,6 +64,7 @@
+ {
+     $http->removeSessionVariable( "CurrentViewMode" );
+     $http->removeSessionVariable( "DeleteIDArray" );
++    $http->removeSessionVariable( 'ScheduleIDArray' );
+     $http->removeSessionVariable( 'ContentObjectID' );
+     $http->removeSessionVariable( 'ContentNodeID' );
+     $http->removeSessionVariable( 'userRedirectURIReverseRelatedList' );
+@@ -91,22 +93,53 @@
+ if ( $http->hasSessionVariable( 'HideRemoveConfirmation' ) )
+     $hideRemoveConfirm = $http->sessionVariable( 'HideRemoveConfirmation' );
+ 
++// Detect if the script monitor extension exists and is enabled
++$canScheduleScript = false;
++if ( in_array( 'ezscriptmonitor', eZExtension::activeExtensions() ) and class_exists( 'eZScheduledScript' ) )
++{
++    eZDebug::writeNotice( 'The scriptmonitor extension will be used if there are too many objects to remove.', 'kernel/content/removeobject.php' );
++    $canScheduleScript = true;
++}
++
+ if ( $http->hasPostVariable( "ConfirmButton" ) or
+      $hideRemoveConfirm )
+ {
++    // Delete right now that which should not be scheduled
+     if ( eZOperationHandler::operationIsAvailable( 'content_delete' ) )
+     {
+         $operationResult = eZOperationHandler::execute( 'content',
+                                                         'delete',
+-                                                         array( 'node_id_list' => $deleteIDArray,
++                                                        array( 'node_id_list' => $deleteIDArray,
+                                                                 'move_to_trash' => $moveToTrash ),
+-                                                          null, true );
++                                                        null, true );
+     }
+     else
+     {
+         eZContentOperationCollection::deleteObject( $deleteIDArray, $moveToTrash );
+     }
+ 
++    if ( $canScheduleScript and count( $scheduleIDArray ) > 0 ) // If there is something to schedule, do it now
++    {
++        $script = eZScheduledScript::create( 'ezsubtreeremove.php',
++                                            'bin/php/' . eZScheduledScript::SCRIPT_NAME_STRING .
++                                            ' -s ' . eZScheduledScript::SITE_ACCESS_STRING .
++                                            ' --nodes-id=' . implode( ',', array_unique( $scheduleIDArray ) ) .
++                                            ($moveToTrash ? '' : ' --ignore-trash'),
++                                            eZScheduledScript::TYPE_PHP );
++        $script->store();
++        $scriptID = $script->attribute( 'id' );
++        $scheduleIDArray = array();
++        $http->removeSessionVariable( 'ScheduleIDArray' );
++    }
++    else // Nothing to schedule, so we redirect to view
++    {
++        return $Module->redirectToView( 'view', array( $viewMode, $contentNodeID, $contentLanguage ) );
++    }
++}
++
++// We have shown the schedule message, now we can continue to view
++if ( $http->hasPostVariable( 'ScheduleContinueButton' ) )
++{
+     return $Module->redirectToView( 'view', array( $viewMode, $contentNodeID, $contentLanguage ) );
+ }
+ 
+@@ -119,6 +152,7 @@
+ $totalChildCount    = $info['total_child_count'];
+ $exceededLimit      = false;
+ $deleteNodeArray    = array();
++$scheduleIDArray    = array();
+ 
+ // Check if number of nodes being removed not more then MaxNodesRemoveSubtree setting.
+ $maxNodesRemoveSubtree = $contentINI->hasVariable( 'RemoveSettings', 'MaxNodesRemoveSubtree' ) ?
+@@ -147,14 +181,20 @@
+         }
+         $deleteItemsExist = count( $deleteIDArrayNew ) != 0;
+         $http->setSessionVariable( "DeleteIDArray", $deleteIDArrayNew );
++
++        if ( $canScheduleScript ) // If the script monitor extension exists and is enabled
++            $scheduleIDArray[] = $nodeID;
+     }
+ }
++if ( count( $scheduleIDArray ) > 0 )
++    $http->setSessionVariable( 'ScheduleIDArray', $scheduleIDArray );
+ 
+ // We check if we can remove the nodes without confirmation
+ // to do this the following must be true:
+ // - The total child count must be zero
+ // - There must be no object removal (i.e. it is the only node for the object)
+-if ( $totalChildCount == 0 )
++// - There must be no scriptID (if there is, we should only show the notice about scheduled scripts)
++if ( $totalChildCount == 0 and !isset( $scriptID ) )
+ {
+     $canRemove = true;
+     foreach ( $deleteResult as $item )
+@@ -199,6 +239,8 @@
+ $tpl->setVariable( 'exceeded_limit'         , $exceededLimit );
+ $tpl->setVariable( 'delete_items_exist'     , $deleteItemsExist );
+ $tpl->setVariable( 'move_to_trash'          , $moveToTrash );
++$tpl->setVariable( 'use_script_monitor'     , ( $canScheduleScript and count( $scheduleIDArray ) > 0 ) );
++$tpl->setVariable( 'scheduled_script_id'    , ( isset( $scriptID ) ? $scriptID : false ) );
+ 
+ $Result = array();
+ $Result['content'] = $tpl->fetch( "design:node/removeobject.tpl" );
+Index: bin/php/ezsubtreeremove.php
+===================================================================
+--- bin/php/ezsubtreeremove.php	(revision 23534)
++++ bin/php/ezsubtreeremove.php	(working copy)
+@@ -41,10 +41,11 @@
+                                       'use-extensions' => true ) );
+ $script->startup();
+ 
+-$scriptOptions = $script->getOptions( "[nodes-id:][ignore-trash]",
++$scriptOptions = $script->getOptions( "[nodes-id:][ignore-trash][scriptid:]",
+                                       "",
+                                       array( 'nodes-id' => "Subtree nodes ID (separated by comma ',').",
+-                                             'ignore-trash' => "Ignore trash ('move to trash' by default)."
++                                             'ignore-trash' => "Ignore trash ('move to trash' by default).",
++                                             'scriptid' => 'Used by the Script Monitor extension, do not use manually'
+                                              ),
+                                       false );
+ $script->initialize();
+@@ -92,6 +93,16 @@
+     $script->shutdown( 1 );
+ }
+ 
++// Take care of script monitoring
++$scheduledScript = false;
++if ( isset( $scriptOptions['scriptid'] ) and
++     in_array( 'ezscriptmonitor', eZExtension::activeExtensions() ) and
++     class_exists( 'eZScheduledScript' ) )
++{
++    $scriptID = $scriptOptions['scriptid'];
++    $scheduledScript = eZScheduledScript::fetch( $scriptID );
++}
++
+ $totalChildCount = $info['total_child_count'];
+ $canRemoveAll = $info['can_remove_all'];
+ $moveToTrashStr = $moveToTrash ? 'true' : 'false';
+@@ -105,6 +116,11 @@
+ 
+ foreach ( $deleteResult as $deleteItem )
+ {
++    if ( $scheduledScript )
++    {
++        $scheduledScript->updateProgress( eZScheduledScript::PROGRESS_UNKNOWN );
++    }
++
+     $node = $deleteItem['node'];
+     $nodeName = $deleteItem['node_name'];
+     if ( $node === null )
+@@ -142,6 +158,11 @@
+         $cli->output( "Successfuly DONE.\n" );
+ }
+ 
++if ( $scheduledScript )
++{
++    $scheduledScript->updateProgress( 100 ); // Complete
++}
++
+ $cli->output( "Done." );
+ $script->shutdown();
+ 
+Index: design/admin/templates/node/removeobject.tpl
+===================================================================
+--- design/admin/templates/node/removeobject.tpl	(revision 23534)
++++ design/admin/templates/node/removeobject.tpl	(working copy)
+@@ -4,10 +4,14 @@
+ 
+ {* DESIGN: Header START *}<div class="box-header"><div class="box-tc"><div class="box-ml"><div class="box-mr"><div class="box-tl"><div class="box-tr">
+ 
+-{section show=$remove_info.can_remove_all}
+-<h2 class="context-title">{'Confirm location removal'|i18n( 'design/admin/node/removeobject' )}</h2>
++{section show=$scheduled_script_id|gt(0)}
++    <h2 class="context-title">{'Scheduled for background removal'|i18n( 'design/admin/node/removeobject' )}</h2>
+ {section-else}
+-<h2 class="context-title">{'Insufficient permissions'|i18n( 'design/admin/node/removeobject' )}</h2>
++    {section show=$remove_info.can_remove_all}
++        <h2 class="context-title">{'Confirm location removal'|i18n( 'design/admin/node/removeobject' )}</h2>
++    {section-else}
++        <h2 class="context-title">{'Insufficient permissions'|i18n( 'design/admin/node/removeobject' )}</h2>
++    {/section}
+ {/section}
+ 
+ {* DESIGN: Mainline *}<div class="header-mainline"></div>
+@@ -16,6 +20,17 @@
+ 
+ {* DESIGN: Content START *}<div class="box-ml"><div class="box-mr"><div class="box-content">
+ 
++{section show=$scheduled_script_id|gt(0)} {* BEGIN scheduler section *}
++
++<div class="block">
++    <p>
++        {'Some nodes have been scheduled for later removal in the background. The process will be started automatically. You can monitor the progress of the background process here:'|i18n( 'design/admin/node/removeobject' )}<br />
++        <b><a href={concat('scriptmonitor/view/',$scheduled_script_id)|ezurl}>{'Background process monitor'|i18n( 'design/admin/node/removeobject' )}</a></b>
++    </p>
++</div>
++
++{section-else} {* ELSE scheduler section *}
++
+ {section show=$total_child_count|gt( 0 )}
+ <div class="block">
+     <p>{'Some of the items that are about to be removed contain sub items.'|i18n( 'design/admin/node/removeobject' )}</p>
+@@ -30,7 +45,11 @@
+     {section show=eq( $exceeded_limit, true() )}
+         <hr />
+     <h4>Warnings:</h4>
+-        <p>{'The lines marked with red contain more than the maximum possible nodes for subtree removal and will not be deleted. You can remove this subtree using the ezsubtreeremove.php script.'|i18n( 'design/admin/node/removeobject' )}</p>
++        {section show=$use_script_monitor}
++            <p>{'The lines marked with red contain more than the maximum possible nodes for subtree removal and will be scheduled for later removal in the background.'|i18n( 'design/admin/node/removeobject' )}</p>
++        {section-else}
++            <p>{'The lines marked with red contain more than the maximum possible nodes for subtree removal and will not be deleted. You can remove this subtree using the ezsubtreeremove.php script.'|i18n( 'design/admin/node/removeobject' )}</p>
++        {/section}
+     <hr />
+     {/section}
+ 
+@@ -104,6 +123,8 @@
+ {/if}
+ </div>
+ 
++{/section} {* END scheduler section *}
++
+ {* DESIGN: Content END *}</div></div></div>
+ 
+ <div class="controlbar">
+@@ -112,13 +133,17 @@
+ 
+ <div class="block">
+ 
+-    {section show=and( $remove_info.can_remove_all, eq( $delete_items_exist, true() ) )}
+-        <input class="button" type="submit" name="ConfirmButton" value="{'OK'|i18n( 'design/admin/node/removeobject' )}" />
++    {section show=$scheduled_script_id|gt(0)}
++        <input class="button" type="submit" name="ScheduleContinueButton" value="{'Continue'|i18n( 'design/admin/node/removeobject' )}" />
+     {section-else}
+-        <input class="button-disabled" type="submit" name="ConfirmButton" value="{'OK'|i18n( 'design/admin/node/removeobject' )}" title="{'You cannot continue because you do not have permission to remove some of the selected locations.'|i18n( 'design/admin/node/removeobject' )}" disabled="disabled" />
++        {section show=and( $remove_info.can_remove_all, or( eq( $delete_items_exist, true() ), eq( $use_script_monitor, true() ) ) )}
++            <input class="button" type="submit" name="ConfirmButton" value="{'OK'|i18n( 'design/admin/node/removeobject' )}" />
++        {section-else}
++            <input class="button-disabled" type="submit" name="ConfirmButton" value="{'OK'|i18n( 'design/admin/node/removeobject' )}" title="{'You cannot continue because you do not have permission to remove some of the selected locations.'|i18n( 'design/admin/node/removeobject' )}" disabled="disabled" />
++        {/section}
++
++        <input type="submit" class="button" name="CancelButton" value="{'Cancel'|i18n( 'design/admin/node/removeobject' )}" title="{'Cancel the removal of locations.'|i18n( 'design/admin/node/removeobject' )}" />
+     {/section}
+-
+-    <input type="submit" class="button" name="CancelButton" value="{'Cancel'|i18n( 'design/admin/node/removeobject' )}" title="{'Cancel the removal of locations.'|i18n( 'design/admin/node/removeobject' )}" />
+ </div>
+ 
+ {* DESIGN: Control bar END *}</div></div></div></div></div></div>

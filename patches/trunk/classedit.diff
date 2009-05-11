@@ -1,6 +1,6 @@
 Index: kernel/class/view.php
 ===================================================================
---- kernel/class/view.php	(revision 23481)
+--- kernel/class/view.php	(revision 23534)
 +++ kernel/class/view.php	(working copy)
 @@ -33,6 +33,19 @@
  $validation = array( 'processed' => false,
@@ -34,7 +34,7 @@ Index: kernel/class/view.php
  $Result['path'] = array( array( 'url' => '/class/grouplist/',
 Index: kernel/class/edit.php
 ===================================================================
---- kernel/class/edit.php	(revision 23481)
+--- kernel/class/edit.php	(revision 23534)
 +++ kernel/class/edit.php	(working copy)
 @@ -27,6 +27,13 @@
  //
@@ -259,7 +259,7 @@ Index: kernel/class/edit.php
  $Result['content'] = $tpl->fetch( 'design:class/edit.tpl' );
 Index: kernel/class/module.php
 ===================================================================
---- kernel/class/module.php	(revision 23481)
+--- kernel/class/module.php	(revision 23534)
 +++ kernel/class/module.php	(working copy)
 @@ -40,7 +40,9 @@
      "script" => "view.php",
@@ -274,7 +274,7 @@ Index: kernel/class/module.php
      'ui_context' => 'edit',
 Index: design/admin/templates/class/edit.tpl
 ===================================================================
---- design/admin/templates/class/edit.tpl	(revision 23481)
+--- design/admin/templates/class/edit.tpl	(revision 23534)
 +++ design/admin/templates/class/edit.tpl	(working copy)
 @@ -244,8 +244,14 @@
  
@@ -293,7 +293,7 @@ Index: design/admin/templates/class/edit.tpl
  
 Index: design/admin/templates/class/view.tpl
 ===================================================================
---- design/admin/templates/class/view.tpl	(revision 23481)
+--- design/admin/templates/class/view.tpl	(revision 23534)
 +++ design/admin/templates/class/view.tpl	(working copy)
 @@ -11,6 +11,35 @@
  </ul>
