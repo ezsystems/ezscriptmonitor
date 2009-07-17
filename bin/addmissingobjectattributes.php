@@ -93,9 +93,11 @@ function updateClass( $classId )
 
                     // Class attribute IDs of object attributes (not necessarily the same as those in the class, hence the manual sql)
                     $objectClassAttributeIDs = array();
-                    $rows = $db->arrayQuery( "SELECT DISTINCT id, contentclassattribute_id, data_type_string
+                    $rows = $db->arrayQuery( "SELECT id,contentclassattribute_id, data_type_string
                                               FROM ezcontentobject_attribute
-                                              WHERE contentobject_id = $contentObjectID" );
+                                              WHERE contentobject_id = '$contentObjectID' AND
+                                                    version = '$versionID' AND
+                                                    language_code='$translationName'" );
                     foreach ( $rows as $row )
                     {
                         $objectClassAttributeIDs[ $row['id'] ] = $row['contentclassattribute_id'];
