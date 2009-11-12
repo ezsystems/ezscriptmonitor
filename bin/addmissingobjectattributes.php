@@ -1,9 +1,10 @@
 #!/usr/bin/env php
 <?php
+// RELEASE: 20091112-1
 //
 // Created on: <10-Aug-2004 15:47:14 pk>
 //
-// Copyright (C) 1999-2008 eZ systems as. All rights reserved.
+// Copyright (C) 1999-2009 eZ systems as. All rights reserved.
 //
 // This source file is part of the eZ publish (tm) Open Source Content
 // Management System.
@@ -172,8 +173,8 @@ function updateClass( $classId )
 $cli = eZCLI::instance();
 $endl = $cli->endlineString();
 
-$script = eZScript::instance( array( 'description' => ( "CLI script.\n\n" .
-                                                        "Will add missing content object attributes for a given class.\n" .
+$script = eZScript::instance( array( 'description' => ( "Add missing object attributes\n\n" .
+                                                        "Will add missing content object attributes, and remove redundant ones, for a given class.\n" .
                                                         "If the class is not given, it will check all classes.\n" .
                                                         "\n" .
                                                         'addmissingobjectattributes.php -s admin --classid=42' ),
@@ -182,7 +183,7 @@ $script = eZScript::instance( array( 'description' => ( "CLI script.\n\n" .
                                       'use-extensions' => true ) );
 $script->startup();
 
-$options = $script->getOptions( '[db-user:][db-password:][db-database:][db-driver:][sql][classid:][admin-user:][scriptid:]',
+$options = $script->getOptions( '[db-host:][db-user:][db-password:][db-database:][db-driver:][sql][classid:][admin-user:][scriptid:]',
                                 '[name]',
                                 array( 'db-host' => 'Database host',
                                        'db-user' => 'Database user',
@@ -194,6 +195,58 @@ $options = $script->getOptions( '[db-user:][db-password:][db-database:][db-drive
                                        'admin-user' => 'Alternative login for the user to perform operation as',
                                        'scriptid' => 'Used by the Script Monitor extension, do not use manually' ) );
 $script->initialize();
+
+$dbUser = $options['db-user'] ? $options['db-user'] : false;
+$dbPassword = $options['db-password'] ? $options['db-password'] : false;
+$dbHost = $options['db-host'] ? $options['db-host'] : false;
+$dbName = $options['db-database'] ? $options['db-database'] : false;
+$dbImpl = $options['db-driver'] ? $options['db-driver'] : false;
+$showSQL = $options['sql'] ? true : false;
+$siteAccess = $options['siteaccess'] ? $options['siteaccess'] : false;
+
+if ( $siteAccess )
+{
+    changeSiteAccessSetting( $siteAccess );
+}
+
+function changeSiteAccessSetting( $siteAccess )
+{
+    global $isQuiet;
+    $cli = eZCLI::instance();
+    if ( file_exists( 'settings/siteaccess/' . $siteAccess ) )
+    {
+        if ( !$isQuiet )
+            $cli->notice( "Using siteaccess $siteAccess" );
+    }
+    else
+    {
+        if ( !$isQuiet )
+            $cli->notice( "Siteaccess $siteAccess does not exist, using default siteaccess" );
+    }
+}
+
+$db = eZDB::instance();
+
+if ( $dbHost or $dbName or $dbUser or $dbImpl )
+{
+    $params = array();
+    if ( $dbHost !== false )
+        $params['server'] = $dbHost;
+    if ( $dbUser !== false )
+    {
+        $params['user'] = $dbUser;
+        $params['password'] = '';
+    }
+    if ( $dbPassword !== false )
+        $params['password'] = $dbPassword;
+    if ( $dbName !== false )
+        $params['database'] = $dbName;
+    $db = eZDB::instance( $dbImpl, $params, true );
+    eZDB::setInstance( $db );
+}
+
+$db->setIsSQLOutputEnabled( $showSQL );
+
 
 // Log in admin user
 if ( isset( $options['admin-user'] ) )
@@ -213,8 +266,6 @@ else
     $script->shutdown( 1 );
     return;
 }
-
-$db = eZDB::instance();
 
 // Take care of script monitoring
 $scheduledScript = false;
