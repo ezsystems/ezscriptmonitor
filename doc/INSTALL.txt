@@ -1,7 +1,7 @@
 INSTALL
 -------
 Gunnstein Lye <gl@ez.no>
-v0.2
+v0.3
 
 1. Unpack the extension and place it in your extension directory (as with all
    extensions).
