@@ -96,7 +96,7 @@ Index: kernel/class/edit.php
          $http->removeSessionVariable( 'ClassCanStoreTicket' );
 -        return $Module->redirectToView( 'view', array( $ClassID ), array( 'Language' => $EditLanguage ) );
 +        return $Module->redirectToView( 'view', array( $ClassID ), array( 'Language' => $EditLanguage,
-+                                                                          'ScheduledScriptID' => $script->attribute( 'id' ) ) );
++                                                                          'ScheduledScriptID' => $scheduledScriptID ) );
      }
  }
  
