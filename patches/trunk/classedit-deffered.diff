@@ -1,0 +1,136 @@
+Index: kernel/class/view.php
+===================================================================
+--- kernel/class/view.php	(revision 24401)
++++ kernel/class/view.php	(working copy)
+@@ -89,6 +89,7 @@
+ $tpl->setVariable( 'attributes', $attributes );
+ $tpl->setVariable( 'datatypes', $datatypes );
+ $tpl->setVariable( 'validation', $validation );
++$tpl->setVariable( 'scheduled_script_id', $ScheduledScriptID );
+ 
+ $Result = array();
+ $Result['content'] = $tpl->fetch( 'design:class/view.tpl' );
+Index: kernel/class/edit.php
+===================================================================
+--- kernel/class/edit.php	(revision 24401)
++++ kernel/class/edit.php	(working copy)
+@@ -582,8 +582,6 @@
+ if ( $http->hasPostVariable( 'StoreButton' ) && $canStore )
+ {
+ 
+-    $id = $class->attribute( 'id' );
+-    $oldClassAttributes = $class->fetchAttributes( $id, true, eZContentClass::VERSION_STATUS_DEFINED );
+     $newClassAttributes = $class->fetchAttributes( );
+ 
+     // validate class name and identifier; check presence of class attributes
+@@ -632,66 +630,25 @@
+             return $Module->redirectToView( 'view', array( $ClassID ), array( 'Language' => $EditLanguage ) );
+         }
+ 
+-        // Class cleanup, update existing class objects according to new changes
+-        $db = eZDB::instance();
+-        $db->begin();
+ 
+-        $objects = null;
+-        $objectCount = eZContentObject::fetchSameClassListCount( $ClassID );
+-        if ( $objectCount > 0 )
++        if ( eZContentObject::fetchSameClassListCount( $ClassID ) > 0 )
+         {
+-            // Delete object attributes which have been removed.
+-            foreach ( $oldClassAttributes as $oldClassAttribute )
+-            {
+-                $attributeExist = false;
+-                $oldClassAttributeID = $oldClassAttribute->attribute( 'id' );
+-                foreach ( $newClassAttributes as $newClassAttribute )
+-                {
+-                    $newClassAttributeID = $newClassAttribute->attribute( 'id' );
+-                    if ( $oldClassAttributeID == $newClassAttributeID )
+-                        $attributeExist = true;
+-                }
+-                if ( !$attributeExist )
+-                {
+-                    $objectAttributes = eZContentObjectAttribute::fetchSameClassAttributeIDList( $oldClassAttributeID );
+-                    foreach ( $objectAttributes as $objectAttribute )
+-                    {
+-                        $objectAttributeID = $objectAttribute->attribute( 'id' );
+-                        $objectAttribute->removeThis( $objectAttributeID );
+-                    }
+-                }
+-            }
+-            $class->storeDefined( $attributes );
+-
+-            // Add object attributes which have been added.
+-            foreach ( $attributes as $newClassAttribute )
+-            {
+-                $attributeExist = false;
+-                $newClassAttributeID = $newClassAttribute->attribute( 'id' );
+-                foreach ( $oldClassAttributes as $oldClassAttribute )
+-                {
+-                    $oldClassAttributeID = $oldClassAttribute->attribute( 'id' );
+-                    if ( $oldClassAttributeID == $newClassAttributeID )
+-                    {
+-                        $attributeExist = true;
+-                        break;
+-                    }
+-                }
+-                if ( !$attributeExist )
+-                {
+-                    $newClassAttribute->initializeObjectAttributes( $objects );
+-                }
+-            }
++            $script = eZScheduledScript::create( 'syncobjectattributes.php',
++                                                 'extension/ezscriptmonitor/bin/' . eZScheduledScript::SCRIPT_NAME_STRING .
++                                                 ' -s ' . eZScheduledScript::SITE_ACCESS_STRING . ' --classid=' . $ClassID,
++                                                 eZScheduledScript::TYPE_PHP );
++            $script->store();
++            $scheduledScriptID = $script->attribute( 'id' );
+         }
+         else
+         {
+             $class->storeDefined( $attributes );
++            $scheduledScriptID = 0;
+         }
+ 
+-        $db->commit();
+-
+         $http->removeSessionVariable( 'ClassCanStoreTicket' );
+-        return $Module->redirectToView( 'view', array( $ClassID ), array( 'Language' => $EditLanguage ) );
++        return $Module->redirectToView( 'view', array( $ClassID ), array( 'Language' => $EditLanguage,
++                                                                          'ScheduledScriptID' => $script->attribute( 'id' ) ) );
+     }
+ }
+ 
+Index: kernel/class/module.php
+===================================================================
+--- kernel/class/module.php	(revision 24401)
++++ kernel/class/module.php	(working copy)
+@@ -40,7 +40,8 @@
+     "script" => "view.php",
+     "default_navigation_part" => 'ezsetupnavigationpart',
+     "params" => array( "ClassID" ),
+-    'unordered_params' => array( 'language' => 'Language' ) );
++    'unordered_params' => array( 'language' => 'Language',
++                                 'scriptid' => 'ScheduledScriptID' ) );
+ $ViewList["copy"] = array(
+     "script" => "copy.php",
+     'ui_context' => 'edit',
+Index: design/admin/templates/class/view.tpl
+===================================================================
+--- design/admin/templates/class/view.tpl	(revision 24401)
++++ design/admin/templates/class/view.tpl	(working copy)
+@@ -11,6 +11,15 @@
+ </ul>
+ </div>
+ {/section}
++{if $scheduled_script_id|gt(0)}
++    <div class="message-warning">
++        <h2><span class="time">[{currentdate()|l10n( shortdatetime )}]</span> {'Class storing deferred'|i18n( 'design/admin/class/view' )}</h2>
++        <p>
++            {'The storing of the class has been deferred because existing objects need to be updated. The process has been scheduled to run in the background and will be started automatically. Please do not edit the class again until the process has finished. You can monitor the progress of the background process here:'|i18n( 'design/admin/class/view' )}<br />
++            <b><a href={concat('scriptmonitor/view/',$scheduled_script_id)|ezurl}>{'Background process monitor'|i18n( 'design/admin/class/view' )}</a></b>
++        </p>
++    </div>
++{/if}
+ {/section}
+ 
+ 
