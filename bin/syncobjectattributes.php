@@ -56,15 +56,15 @@ function updateClass( $classId, $scheduledScript )
 
     // Fetch the stored class
 
-    $class = eZContentClass::fetch( $classId, true, eZContentClass::VERSION_STATUS_TEMPORARY );
+    $class = eZContentClass::fetch( $classId, true, eZContentClass::VERSION_STATUS_MODIFIED );
     if ( !$class )
     {
-        $cli->error( 'Could not fetch class with ID: ' . $classId );
+        $cli->error( 'No class in a modified version status with ID: ' . $classId );
         return;
     }
 
     // Fetch attributes and definitions
-    $attributes = $class->fetchAttributes( $classId, true, eZContentClass::VERSION_STATUS_TEMPORARY );
+    $attributes = $class->fetchAttributes( $classId, true, eZContentClass::VERSION_STATUS_MODIFIED );
 
     $oldClassAttributes = $class->fetchAttributes( $classId, true, eZContentClass::VERSION_STATUS_DEFINED );
 
@@ -86,7 +86,7 @@ function updateClass( $classId, $scheduledScript )
             }
         }
     }
-    $class->storeDefined( $attributes );
+    $class->storeVersioned( $attributes, eZContentClass::VERSION_STATUS_DEFINED );
 
     // Add object attributes which have been added.
     foreach ( $attributes as $newClassAttribute )
@@ -145,6 +145,9 @@ $dbHost = $options['db-host'] ? $options['db-host'] : false;
 $dbName = $options['db-database'] ? $options['db-database'] : false;
 $dbImpl = $options['db-driver'] ? $options['db-driver'] : false;
 $siteAccess = $options['siteaccess'] ? $options['siteaccess'] : false;
+
+if ( !isset( $isQuiet )  )
+    $isQuiet = false;
 
 if ( $siteAccess )
 {
@@ -209,14 +212,14 @@ if ( isset( $options['classid'] ) )
 }
 else
 {
-    /*
+    
     $cli->notice( 'The classid parameter was not given, will check all classes.' );
-    foreach ( eZContentClass::fetchAllClasses( false ) as $class )
+    foreach ( eZContentClass::fetchList( eZContentClass::VERSION_STATUS_MODIFIED, false ) as $class )
     {
-        $cli->notice( 'Checking class ' . $class['id'] . ': ' . $class['name'] );
+        $cli->notice( 'Checking class with ID: ' . $class['id'] );
         updateClass( $class['id'], $scheduledScript );
     }
-    */
+    
 }
 
 $script->shutdown();
