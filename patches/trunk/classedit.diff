@@ -221,9 +221,9 @@ Index: kernel/class/edit.php
 +                eZDebug::writeNotice( 'Deferring class storing to a cronjob, using the scriptmonitor extension.', 'kernel/class/edit.php' );
 +                // Schedule script
 +                $script = eZScheduledScript::create( 'addmissingobjectattributes.php',
-+                                                     'extension/ezscriptmonitor/bin/' . eZScheduledScript::SCRIPT_NAME_STRING .
-+                                                     ' -s ' . eZScheduledScript::SITE_ACCESS_STRING . ' --classid=' . $ClassID,
-+                                                     eZScheduledScript::TYPE_PHP );
++                                                     eZINI::instance( 'ezscriptmonitor.ini' )->variable( 'GeneralSettings', 'PhpCliCommand' ) .
++                                                     ' extension/ezscriptmonitor/bin/' . eZScheduledScript::SCRIPT_NAME_STRING .
++                                                     ' -s ' . eZScheduledScript::SITE_ACCESS_STRING . ' --classid=' . $ClassID );
 +                $script->store();
 +                return $Module->redirectToView( 'view', array( $ClassID ), array( 'Language' => $EditLanguage,
 +                                                                                  'ScheduledScriptID' => $script->attribute( 'id' ),

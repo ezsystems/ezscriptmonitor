@@ -2,11 +2,6 @@
 
 class eZScheduledScript extends eZPersistentObject
 {
-    // Script types
-    const TYPE_PHP = 1;
-    const TYPE_SH = 2;
-    const TYPE_BATCH = 3;
-
     const SITE_ACCESS_STRING = '__SITE_ACCESS__'; // Magic string to be replaced with site access
     const SCRIPT_NAME_STRING = '__SCRIPT_NAME__'; // Magic string to be replaced with script name
 
@@ -34,7 +29,7 @@ class eZScheduledScript extends eZPersistentObject
     /*!
      \return a new object.
     */
-    static function create( $name, $command, $type, $userID = false )
+    static function create( $name, $command, $userID = false )
     {
         if ( trim( $name ) == '' )
         {
@@ -48,12 +43,6 @@ class eZScheduledScript extends eZPersistentObject
             return false;
         }
 
-        if ( !in_array( $type, array( self::TYPE_PHP, self::TYPE_SH, self::TYPE_BATCH ) ) )
-        {
-            eZDebug::writeError( 'Unknown script type, must be either TYPE_PHP, TYPE_SH or TYPE_BATCH', 'ezscriptmonitor' );
-            return false;
-        }
-
         if ( !$userID )
         {
             $userID = eZUser::currentUserID();
@@ -63,11 +52,6 @@ class eZScheduledScript extends eZPersistentObject
         $scriptSiteAccess = $scriptMonitorIni->variable( 'GeneralSettings', 'ScriptSiteAccess' );
         $command = str_replace( self::SCRIPT_NAME_STRING, $name, $command );
         $command = str_replace( self::SITE_ACCESS_STRING, $scriptSiteAccess, $command );
-        if ( $type = self::TYPE_PHP )
-        {
-            $phpCommand = $scriptMonitorIni->variable( 'GeneralSettings', 'PhpCliCommand' );
-            $command = "$phpCommand $command";
-        }
 
         // Negative progress means not started yet
         return new self( array( 'name' => $name,

@@ -1,7 +1,7 @@
 Index: kernel/classes/ezdatatype.php
 ===================================================================
---- kernel/classes/ezdatatype.php	(révision 24461)
-+++ kernel/classes/ezdatatype.php	(copie de travail)
+--- kernel/classes/ezdatatype.php	(revision 24471)
++++ kernel/classes/ezdatatype.php	(working copy)
 @@ -674,11 +674,54 @@
      {
      }
@@ -59,8 +59,8 @@ Index: kernel/classes/ezdatatype.php
       state as defined in eZInputValidator.
 Index: kernel/classes/ezcontentclass.php
 ===================================================================
---- kernel/classes/ezcontentclass.php	(révision 24461)
-+++ kernel/classes/ezcontentclass.php	(copie de travail)
+--- kernel/classes/ezcontentclass.php	(revision 24471)
++++ kernel/classes/ezcontentclass.php	(working copy)
 @@ -997,44 +997,55 @@
      */
      function storeDefined( $attributes )
@@ -139,8 +139,8 @@ Index: kernel/classes/ezcontentclass.php
          $handler = eZExpiryHandler::instance();
 Index: kernel/classes/ezcontentclassattribute.php
 ===================================================================
---- kernel/classes/ezcontentclassattribute.php	(révision 24461)
-+++ kernel/classes/ezcontentclassattribute.php	(copie de travail)
+--- kernel/classes/ezcontentclassattribute.php	(revision 24471)
++++ kernel/classes/ezcontentclassattribute.php	(working copy)
 @@ -265,6 +265,15 @@
       */
      function storeDefined()
@@ -177,8 +177,8 @@ Index: kernel/classes/ezcontentclassattribute.php
          return $stored;
 Index: kernel/class/view.php
 ===================================================================
---- kernel/class/view.php	(révision 24461)
-+++ kernel/class/view.php	(copie de travail)
+--- kernel/class/view.php	(revision 24471)
++++ kernel/class/view.php	(working copy)
 @@ -89,6 +89,7 @@
  $tpl->setVariable( 'attributes', $attributes );
  $tpl->setVariable( 'datatypes', $datatypes );
@@ -189,8 +189,8 @@ Index: kernel/class/view.php
  $Result['content'] = $tpl->fetch( 'design:class/view.tpl' );
 Index: kernel/class/edit.php
 ===================================================================
---- kernel/class/edit.php	(révision 24461)
-+++ kernel/class/edit.php	(copie de travail)
+--- kernel/class/edit.php	(revision 24471)
++++ kernel/class/edit.php	(working copy)
 @@ -62,6 +62,19 @@
  
  if ( is_numeric( $ClassID ) )
@@ -300,9 +300,9 @@ Index: kernel/class/edit.php
 -                }
 -            }
 +            $script = eZScheduledScript::create( 'syncobjectattributes.php',
-+                                                 'extension/ezscriptmonitor/bin/' . eZScheduledScript::SCRIPT_NAME_STRING .
-+                                                 ' -s ' . eZScheduledScript::SITE_ACCESS_STRING . ' --classid=' . $ClassID,
-+                                                 eZScheduledScript::TYPE_PHP );
++                                                 eZINI::instance( 'ezscriptmonitor.ini' )->variable( 'GeneralSettings', 'PhpCliCommand' ) .
++                                                 ' extension/ezscriptmonitor/bin/' . eZScheduledScript::SCRIPT_NAME_STRING .
++                                                 ' -s ' . eZScheduledScript::SITE_ACCESS_STRING . ' --classid=' . $ClassID );
 +            $script->store();
 +            $scheduledScriptID = $script->attribute( 'id' );
 +            $class->storeVersioned( $attributes, eZContentClass::VERSION_STATUS_MODIFIED );
@@ -325,8 +325,8 @@ Index: kernel/class/edit.php
  
 Index: kernel/class/module.php
 ===================================================================
---- kernel/class/module.php	(révision 24461)
-+++ kernel/class/module.php	(copie de travail)
+--- kernel/class/module.php	(revision 24471)
++++ kernel/class/module.php	(working copy)
 @@ -40,7 +40,8 @@
      "script" => "view.php",
      "default_navigation_part" => 'ezsetupnavigationpart',
@@ -339,8 +339,8 @@ Index: kernel/class/module.php
      'ui_context' => 'edit',
 Index: design/admin/templates/class/edit_locked.tpl
 ===================================================================
---- design/admin/templates/class/edit_locked.tpl	(révision 0)
-+++ design/admin/templates/class/edit_locked.tpl	(révision 0)
+--- design/admin/templates/class/edit_locked.tpl	(revision 0)
++++ design/admin/templates/class/edit_locked.tpl	(revision 0)
 @@ -0,0 +1,62 @@
 +<div class="message-warning">
 +
@@ -406,8 +406,8 @@ Index: design/admin/templates/class/edit_locked.tpl
 +</form>
 Index: design/admin/templates/class/view.tpl
 ===================================================================
---- design/admin/templates/class/view.tpl	(révision 24461)
-+++ design/admin/templates/class/view.tpl	(copie de travail)
+--- design/admin/templates/class/view.tpl	(revision 24471)
++++ design/admin/templates/class/view.tpl	(working copy)
 @@ -13,6 +13,15 @@
  {/section}
  {/section}
