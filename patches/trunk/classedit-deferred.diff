@@ -1,6 +1,6 @@
 Index: kernel/classes/ezdatatype.php
 ===================================================================
---- kernel/classes/ezdatatype.php	(revision 24471)
+--- kernel/classes/ezdatatype.php	(revision 24473)
 +++ kernel/classes/ezdatatype.php	(working copy)
 @@ -674,11 +674,54 @@
      {
@@ -59,8 +59,17 @@ Index: kernel/classes/ezdatatype.php
       state as defined in eZInputValidator.
 Index: kernel/classes/ezcontentclass.php
 ===================================================================
---- kernel/classes/ezcontentclass.php	(revision 24471)
+--- kernel/classes/ezcontentclass.php	(revision 24473)
 +++ kernel/classes/ezcontentclass.php	(working copy)
+@@ -786,7 +786,7 @@
+     function remove( $removeAttributes = false, $version = eZContentClass::VERSION_STATUS_DEFINED )
+     {
+         // If we are not allowed to remove just return false
+-        if ( $this->Version != eZContentClass::VERSION_STATUS_TEMPORARY && !$this->isRemovable() )
++        if ( $this->Version == eZContentClass::VERSION_STATUS_DEFINED && !$this->isRemovable() )
+             return false;
+ 
+         if ( is_array( $removeAttributes ) or $removeAttributes )
 @@ -997,44 +997,55 @@
      */
      function storeDefined( $attributes )
@@ -139,7 +148,7 @@ Index: kernel/classes/ezcontentclass.php
          $handler = eZExpiryHandler::instance();
 Index: kernel/classes/ezcontentclassattribute.php
 ===================================================================
---- kernel/classes/ezcontentclassattribute.php	(revision 24471)
+--- kernel/classes/ezcontentclassattribute.php	(revision 24473)
 +++ kernel/classes/ezcontentclassattribute.php	(working copy)
 @@ -265,6 +265,15 @@
       */
@@ -177,7 +186,7 @@ Index: kernel/classes/ezcontentclassattribute.php
          return $stored;
 Index: kernel/class/view.php
 ===================================================================
---- kernel/class/view.php	(revision 24471)
+--- kernel/class/view.php	(revision 24473)
 +++ kernel/class/view.php	(working copy)
 @@ -89,6 +89,7 @@
  $tpl->setVariable( 'attributes', $attributes );
@@ -189,7 +198,7 @@ Index: kernel/class/view.php
  $Result['content'] = $tpl->fetch( 'design:class/view.tpl' );
 Index: kernel/class/edit.php
 ===================================================================
---- kernel/class/edit.php	(revision 24471)
+--- kernel/class/edit.php	(revision 24473)
 +++ kernel/class/edit.php	(working copy)
 @@ -62,6 +62,19 @@
  
@@ -325,7 +334,7 @@ Index: kernel/class/edit.php
  
 Index: kernel/class/module.php
 ===================================================================
---- kernel/class/module.php	(revision 24471)
+--- kernel/class/module.php	(revision 24473)
 +++ kernel/class/module.php	(working copy)
 @@ -40,7 +40,8 @@
      "script" => "view.php",
@@ -406,7 +415,7 @@ Index: design/admin/templates/class/edit_locked.tpl
 +</form>
 Index: design/admin/templates/class/view.tpl
 ===================================================================
---- design/admin/templates/class/view.tpl	(revision 24471)
+--- design/admin/templates/class/view.tpl	(revision 24473)
 +++ design/admin/templates/class/view.tpl	(working copy)
 @@ -13,6 +13,15 @@
  {/section}
