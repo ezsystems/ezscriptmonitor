@@ -249,7 +249,7 @@ Index: kernel/class/edit.php
          $canStore = false;
          $validation['processed'] = false;
      }
-@@ -629,69 +641,31 @@
+@@ -629,69 +641,79 @@
      {
          if ( !$http->hasSessionVariable( 'ClassCanStoreTicket' ) )
          {
@@ -260,19 +260,33 @@ Index: kernel/class/edit.php
 -        // Class cleanup, update existing class objects according to new changes
 -        $db = eZDB::instance();
 -        $db->begin();
- 
+-
 -        $objects = null;
 -        $objectCount = eZContentObject::fetchSameClassListCount( $ClassID );
 -        if ( $objectCount > 0 )
++        // Is there existing objects of this content class?
 +        if ( eZContentObject::fetchSameClassListCount( $ClassID ) > 0 )
          {
 -            // Delete object attributes which have been removed.
 -            foreach ( $oldClassAttributes as $oldClassAttribute )
--            {
++            // Should this be stored as a scheduled script?
++            if ( eZINI::instance( 'site.ini' )->variable( 'ContentSettings', 'DeferContentClassModification' ) === 'enabled' ) {
++                $script = eZScheduledScript::create( 'syncobjectattributes.php',
++                                                    eZINI::instance( 'ezscriptmonitor.ini' )->variable( 'GeneralSettings', 'PhpCliCommand' ) .
++                                                    ' extension/ezscriptmonitor/bin/' . eZScheduledScript::SCRIPT_NAME_STRING .
++                                                    ' -s ' . eZScheduledScript::SITE_ACCESS_STRING . ' --classid=' . $ClassID );
++                $script->store();
++                $scheduledScriptID = $script->attribute( 'id' );
++                $class->storeVersioned( $attributes, eZContentClass::VERSION_STATUS_MODIFIED );
++            }
++            else
+             {
 -                $attributeExist = false;
 -                $oldClassAttributeID = $oldClassAttribute->attribute( 'id' );
 -                foreach ( $newClassAttributes as $newClassAttribute )
--                {
++                // Delete object attributes which have been removed.
++                foreach ( $oldClassAttributes as $oldClassAttribute )
+                 {
 -                    $newClassAttributeID = $newClassAttribute->attribute( 'id' );
 -                    if ( $oldClassAttributeID == $newClassAttributeID )
 -                        $attributeExist = true;
@@ -281,40 +295,64 @@ Index: kernel/class/edit.php
 -                {
 -                    $objectAttributes = eZContentObjectAttribute::fetchSameClassAttributeIDList( $oldClassAttributeID );
 -                    foreach ( $objectAttributes as $objectAttribute )
--                    {
++                    $attributeExist = false;
++                    $oldClassAttributeID = $oldClassAttribute->attribute( 'id' );
++                    foreach ( $newClassAttributes as $newClassAttribute )
+                     {
 -                        $objectAttributeID = $objectAttribute->attribute( 'id' );
 -                        $objectAttribute->removeThis( $objectAttributeID );
--                    }
--                }
++                        $newClassAttributeID = $newClassAttribute->attribute( 'id' );
++                        if ( $oldClassAttributeID == $newClassAttributeID )
++                            $attributeExist = true;
+                     }
++                    if ( !$attributeExist )
++                    {
++                        $objectAttributes = eZContentObjectAttribute::fetchSameClassAttributeIDList( $oldClassAttributeID );
++                        foreach ( $objectAttributes as $objectAttribute )
++                        {
++                            $objectAttributeID = $objectAttribute->attribute( 'id' );
++                            $objectAttribute->removeThis( $objectAttributeID );
++                        }
++                    }
+                 }
 -            }
 -            $class->storeDefined( $attributes );
--
++                $class->storeDefined( $attributes );
+ 
 -            // Add object attributes which have been added.
 -            foreach ( $attributes as $newClassAttribute )
 -            {
 -                $attributeExist = false;
 -                $newClassAttributeID = $newClassAttribute->attribute( 'id' );
 -                foreach ( $oldClassAttributes as $oldClassAttribute )
--                {
++                // Add object attributes which have been added.
++                foreach ( $attributes as $newClassAttribute )
+                 {
 -                    $oldClassAttributeID = $oldClassAttribute->attribute( 'id' );
 -                    if ( $oldClassAttributeID == $newClassAttributeID )
--                    {
++                    $attributeExist = false;
++                    $newClassAttributeID = $newClassAttribute->attribute( 'id' );
++                    foreach ( $oldClassAttributes as $oldClassAttribute )
+                     {
 -                        $attributeExist = true;
 -                        break;
--                    }
--                }
++                        $oldClassAttributeID = $oldClassAttribute->attribute( 'id' );
++                        if ( $oldClassAttributeID == $newClassAttributeID )
++                        {
++                            $attributeExist = true;
++                            break;
++                        }
+                     }
++                    if ( !$attributeExist )
++                    {
++                        $newClassAttribute->initializeObjectAttributes( $objects );
++                    }
+                 }
 -                if ( !$attributeExist )
 -                {
 -                    $newClassAttribute->initializeObjectAttributes( $objects );
 -                }
--            }
-+            $script = eZScheduledScript::create( 'syncobjectattributes.php',
-+                                                 eZINI::instance( 'ezscriptmonitor.ini' )->variable( 'GeneralSettings', 'PhpCliCommand' ) .
-+                                                 ' extension/ezscriptmonitor/bin/' . eZScheduledScript::SCRIPT_NAME_STRING .
-+                                                 ' -s ' . eZScheduledScript::SITE_ACCESS_STRING . ' --classid=' . $ClassID );
-+            $script->store();
-+            $scheduledScriptID = $script->attribute( 'id' );
-+            $class->storeVersioned( $attributes, eZContentClass::VERSION_STATUS_MODIFIED );
+             }
          }
          else
          {
@@ -346,6 +384,20 @@ Index: kernel/class/module.php
  $ViewList["copy"] = array(
      "script" => "copy.php",
      'ui_context' => 'edit',
+Index: settings/site.ini
+===================================================================
+--- settings/site.ini	(revision 24473)
++++ settings/site.ini	(working copy)
+@@ -1011,6 +1011,9 @@
+ # this value in seconds, it is considered timed out (process died, for instance),
+ # and generation is taken over by the requesting process
+ CacheGenerationTimeout=60
++# Set to 'enabled' to make eZ Publish defer the content class modification with the help of
++# eZ Script Monitor
++DeferContentClassModification=disabled
+ 
+ [MailSettings]
+ # The type of transport for emails, can be either sendmail or SMTP
 Index: design/admin/templates/class/edit_locked.tpl
 ===================================================================
 --- design/admin/templates/class/edit_locked.tpl	(revision 0)
