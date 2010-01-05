@@ -329,7 +329,7 @@ Index: kernel/class/edit.php
 -            // Delete object attributes which have been removed.
 -            foreach ( $oldClassAttributes as $oldClassAttribute )
 +            // Should this be stored as a scheduled script?
-+            if ( false && $class->canDeferModification() && in_array( 'ezscriptmonitor', eZExtension::activeExtensions() ) ) {
++            if ( $class->canDeferModification() && in_array( 'ezscriptmonitor', eZExtension::activeExtensions() ) ) {
 +                $script = eZScheduledScript::create( 'syncobjectattributes.php',
 +                                                    eZINI::instance( 'ezscriptmonitor.ini' )->variable( 'GeneralSettings', 'PhpCliCommand' ) .
 +                                                    ' extension/ezscriptmonitor/bin/' . eZScheduledScript::SCRIPT_NAME_STRING .
