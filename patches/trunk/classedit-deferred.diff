@@ -165,23 +165,104 @@ Index: kernel/classes/ezcontentclass.php
  
          eZExpiryHandler::registerShutdownFunction();
          $handler = eZExpiryHandler::instance();
-@@ -1077,6 +1094,16 @@
-         $this->setAttribute( "version", $version );
-     }
- 
-+    /**
-+     * Indicates if modifications to the content class should be stored defered.
-+     *
-+     * @return bool
-+     */
-+    public function canDeferModification()
-+    {
-+        return eZINI::instance( 'site.ini' )->variable( 'ContentSettings', 'DeferContentClassModification' ) === 'enabled';
-+    }
+Index: kernel/classes/ezcontentclassedithandler.php
+===================================================================
+--- kernel/classes/ezcontentclassedithandler.php	(revision 0)
++++ kernel/classes/ezcontentclassedithandler.php	(revision 0)
+@@ -0,0 +1,92 @@
++<?php
++//
++// Definition of eZContentClassEditHandler class
++//
++// Created on: <11-Jan-2010 11:56:00 pa>
++//
++// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
++// SOFTWARE NAME: eZ Publish
++// SOFTWARE RELEASE: 4.3.x
++// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
++// SOFTWARE LICENSE: GNU General Public License v2.0
++// NOTICE: >
++//   This program is free software; you can redistribute it and/or
++//   modify it under the terms of version 2.0  of the GNU General
++//   Public License as published by the Free Software Foundation.
++//
++//   This program is distributed in the hope that it will be useful,
++//   but WITHOUT ANY WARRANTY; without even the implied warranty of
++//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++//   GNU General Public License for more details.
++//
++//   You should have received a copy of version 2.0 of the GNU General
++//   Public License along with this program; if not, write to the Free
++//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
++//   MA 02110-1301, USA.
++//
++//
++// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
++//
 +
-     static function exists( $id, $version = eZContentClass::VERSION_STATUS_DEFINED, $userID = false, $useIdentifier = false )
-     {
-         $conds = array( "version" => $version );
++/**
++ * Handler for content class editing.
++ */
++class eZContentClassEditHandler
++{
++
++    /**
++     * Store the modification made to an eZContentClass.
++     *
++     * @param eZContentClass Content class to be stored.
++     * @param array[eZContentClassAttribute] Attributes of the new content class.
++     * @param array Unordered view parameters
++     */
++    public function store( eZContentClass $class, array $attributes, array &$unorderedParameters )
++    {
++        $oldClassAttributes = $class->fetchAttributes( $class->attribute( 'id' ), true, eZContentClass::VERSION_STATUS_DEFINED );
++        // Delete object attributes which have been removed.
++        foreach ( $oldClassAttributes as $oldClassAttribute )
++        {
++            $attributeExist = false;
++            $oldClassAttributeID = $oldClassAttribute->attribute( 'id' );
++            foreach ( $class->fetchAttributes( ) as $newClassAttribute )
++            {
++                $newClassAttributeID = $newClassAttribute->attribute( 'id' );
++                if ( $oldClassAttributeID == $newClassAttributeID )
++                    $attributeExist = true;
++            }
++            if ( !$attributeExist )
++            {
++                $objectAttributes = eZContentObjectAttribute::fetchSameClassAttributeIDList( $oldClassAttributeID );
++                foreach ( $objectAttributes as $objectAttribute )
++                {
++                    $objectAttributeID = $objectAttribute->attribute( 'id' );
++                    $objectAttribute->removeThis( $objectAttributeID );
++                }
++            }
++        }
++        $class->storeDefined( $attributes );
++
++        // Add object attributes which have been added.
++        foreach ( $attributes as $newClassAttribute )
++        {
++            $attributeExist = false;
++            $newClassAttributeID = $newClassAttribute->attribute( 'id' );
++            foreach ( $oldClassAttributes as $oldClassAttribute )
++            {
++                $oldClassAttributeID = $oldClassAttribute->attribute( 'id' );
++                if ( $oldClassAttributeID == $newClassAttributeID )
++                {
++                    $attributeExist = true;
++                    break;
++                }
++            }
++            if ( !$attributeExist )
++            {
++                $newClassAttribute->initializeObjectAttributes( $objects );
++            }
++        }
++    }
++}
++
++?>
+\ No newline at end of file
 Index: kernel/classes/ezcontentclassattribute.php
 ===================================================================
 --- kernel/classes/ezcontentclassattribute.php	(revision 24473)
@@ -259,7 +340,7 @@ Index: kernel/class/edit.php
 ===================================================================
 --- kernel/class/edit.php	(revision 24473)
 +++ kernel/class/edit.php	(working copy)
-@@ -62,6 +62,19 @@
+@@ -63,6 +63,19 @@
  
  if ( is_numeric( $ClassID ) )
  {
@@ -279,7 +360,7 @@ Index: kernel/class/edit.php
      $class = eZContentClass::fetch( $ClassID, true, eZContentClass::VERSION_STATUS_TEMPORARY );
  
      // If temporary version does not exist fetch the current and add temperory class to corresponding group
-@@ -582,8 +595,6 @@
+@@ -609,8 +622,6 @@
  if ( $http->hasPostVariable( 'StoreButton' ) && $canStore )
  {
  
@@ -288,7 +369,7 @@ Index: kernel/class/edit.php
      $newClassAttributes = $class->fetchAttributes( );
  
      // validate class name and identifier; check presence of class attributes
-@@ -611,6 +622,7 @@
+@@ -638,6 +649,7 @@
      // validate class identifier
  
      $db = eZDB::instance();
@@ -296,7 +377,7 @@ Index: kernel/class/edit.php
      $classCount = $db->arrayQuery( "SELECT COUNT(*) AS count FROM ezcontentclass WHERE  identifier='$classIdentifier' AND version=" . eZContentClass::VERSION_STATUS_DEFINED . " AND id <> $classID" );
      if ( $classCount[0]['count'] > 0 )
      {
-@@ -618,10 +630,10 @@
+@@ -645,10 +657,10 @@
          $basicClassPropertiesValid = false;
      }
      unset( $classList );
@@ -308,7 +389,7 @@ Index: kernel/class/edit.php
          $canStore = false;
          $validation['processed'] = false;
      }
-@@ -629,69 +641,79 @@
+@@ -656,69 +668,29 @@
      {
          if ( !$http->hasSessionVariable( 'ClassCanStoreTicket' ) )
          {
@@ -319,7 +400,8 @@ Index: kernel/class/edit.php
 -        // Class cleanup, update existing class objects according to new changes
 -        $db = eZDB::instance();
 -        $db->begin();
--
++        $unorderedParameters = array( 'Language' => $EditLanguage );
+ 
 -        $objects = null;
 -        $objectCount = eZContentObject::fetchSameClassListCount( $ClassID );
 -        if ( $objectCount > 0 )
@@ -328,24 +410,11 @@ Index: kernel/class/edit.php
          {
 -            // Delete object attributes which have been removed.
 -            foreach ( $oldClassAttributes as $oldClassAttribute )
-+            // Should this be stored as a scheduled script?
-+            if ( $class->canDeferModification() && in_array( 'ezscriptmonitor', eZExtension::activeExtensions() ) ) {
-+                $script = eZScheduledScript::create( 'syncobjectattributes.php',
-+                                                    eZINI::instance( 'ezscriptmonitor.ini' )->variable( 'GeneralSettings', 'PhpCliCommand' ) .
-+                                                    ' extension/ezscriptmonitor/bin/' . eZScheduledScript::SCRIPT_NAME_STRING .
-+                                                    ' -s ' . eZScheduledScript::SITE_ACCESS_STRING . ' --classid=' . $ClassID );
-+                $script->store();
-+                $scheduledScriptID = $script->attribute( 'id' );
-+                $class->storeVersioned( $attributes, eZContentClass::VERSION_STATUS_MODIFIED );
-+            }
-+            else
-             {
+-            {
 -                $attributeExist = false;
 -                $oldClassAttributeID = $oldClassAttribute->attribute( 'id' );
 -                foreach ( $newClassAttributes as $newClassAttribute )
-+                // Delete object attributes which have been removed.
-+                foreach ( $oldClassAttributes as $oldClassAttribute )
-                 {
+-                {
 -                    $newClassAttributeID = $newClassAttribute->attribute( 'id' );
 -                    if ( $oldClassAttributeID == $newClassAttributeID )
 -                        $attributeExist = true;
@@ -354,69 +423,42 @@ Index: kernel/class/edit.php
 -                {
 -                    $objectAttributes = eZContentObjectAttribute::fetchSameClassAttributeIDList( $oldClassAttributeID );
 -                    foreach ( $objectAttributes as $objectAttribute )
-+                    $attributeExist = false;
-+                    $oldClassAttributeID = $oldClassAttribute->attribute( 'id' );
-+                    foreach ( $newClassAttributes as $newClassAttribute )
-                     {
+-                    {
 -                        $objectAttributeID = $objectAttribute->attribute( 'id' );
 -                        $objectAttribute->removeThis( $objectAttributeID );
-+                        $newClassAttributeID = $newClassAttribute->attribute( 'id' );
-+                        if ( $oldClassAttributeID == $newClassAttributeID )
-+                            $attributeExist = true;
-                     }
-+                    if ( !$attributeExist )
-+                    {
-+                        $objectAttributes = eZContentObjectAttribute::fetchSameClassAttributeIDList( $oldClassAttributeID );
-+                        foreach ( $objectAttributes as $objectAttribute )
-+                        {
-+                            $objectAttributeID = $objectAttribute->attribute( 'id' );
-+                            $objectAttribute->removeThis( $objectAttributeID );
-+                        }
-+                    }
-                 }
+-                    }
+-                }
 -            }
 -            $class->storeDefined( $attributes );
-+                $class->storeDefined( $attributes );
- 
+-
 -            // Add object attributes which have been added.
 -            foreach ( $attributes as $newClassAttribute )
 -            {
 -                $attributeExist = false;
 -                $newClassAttributeID = $newClassAttribute->attribute( 'id' );
 -                foreach ( $oldClassAttributes as $oldClassAttribute )
-+                // Add object attributes which have been added.
-+                foreach ( $attributes as $newClassAttribute )
-                 {
+-                {
 -                    $oldClassAttributeID = $oldClassAttribute->attribute( 'id' );
 -                    if ( $oldClassAttributeID == $newClassAttributeID )
-+                    $attributeExist = false;
-+                    $newClassAttributeID = $newClassAttribute->attribute( 'id' );
-+                    foreach ( $oldClassAttributes as $oldClassAttribute )
-                     {
+-                    {
 -                        $attributeExist = true;
 -                        break;
-+                        $oldClassAttributeID = $oldClassAttribute->attribute( 'id' );
-+                        if ( $oldClassAttributeID == $newClassAttributeID )
-+                        {
-+                            $attributeExist = true;
-+                            break;
-+                        }
-                     }
-+                    if ( !$attributeExist )
-+                    {
-+                        $newClassAttribute->initializeObjectAttributes( $objects );
-+                    }
-                 }
+-                    }
+-                }
 -                if ( !$attributeExist )
 -                {
 -                    $newClassAttribute->initializeObjectAttributes( $objects );
 -                }
-             }
+-            }
++            eZExtension::getHandlerClass( new ezpExtensionOptions( array( 'iniFile' => 'site.ini',
++                                                                          'iniSection'   => 'ContentSettings',
++                                                                          'iniVariable'  => 'ContentClassEditHandler') ) )
++                    ->store( $class, $attributes, $unorderedParameters );
          }
          else
          {
 -            $class->storeDefined( $attributes );
-+            $scheduledScriptID = 0;
++            $unorderedParameters['ScheduledScriptID'] = 0;
 +            $class->storeVersioned( $attributes, eZContentClass::VERSION_STATUS_DEFINED );
          }
  
@@ -424,8 +466,7 @@ Index: kernel/class/edit.php
 -
          $http->removeSessionVariable( 'ClassCanStoreTicket' );
 -        return $Module->redirectToView( 'view', array( $ClassID ), array( 'Language' => $EditLanguage ) );
-+        return $Module->redirectToView( 'view', array( $ClassID ), array( 'Language' => $EditLanguage,
-+                                                                          'ScheduledScriptID' => $scheduledScriptID ) );
++        return $Module->redirectToView( 'view', array( $ClassID ), $unorderedParameters );
      }
  }
  
@@ -447,21 +488,22 @@ Index: settings/site.ini
 ===================================================================
 --- settings/site.ini	(revision 24473)
 +++ settings/site.ini	(working copy)
-@@ -1011,6 +1011,10 @@
+@@ -1011,6 +1011,11 @@
  # this value in seconds, it is considered timed out (process died, for instance),
  # and generation is taken over by the requesting process
  CacheGenerationTimeout=60
-+# Set to 'enabled' to make eZ Publish defer the content class modification with the help of
-+# eZ Script Monitor. It is useful when many objects of a content class being modified exist
-+# as it would require them to be updated online with the risk of a timeout issue.
-+DeferContentClassModification=disabled
++# Handler responsible of storing changes made on a content class when objects exist
++# and requires an update. As this might be a huge task that can lead to time out,
++# you may consider to use the 'eZContentClassEditDeferredHandler' provided with the
++# eZ Script Monitor extension.
++ContentClassEditHandler=eZContentClassEditHandler
  
  [MailSettings]
  # The type of transport for emails, can be either sendmail or SMTP
-Index: design/admin/templates/class/edit_locked.tpl
+Index: design/standard/templates/class/edit_locked.tpl
 ===================================================================
---- design/admin/templates/class/edit_locked.tpl	(revision 0)
-+++ design/admin/templates/class/edit_locked.tpl	(revision 0)
+--- design/standard/templates/class/edit_locked.tpl	(revision 0)
++++ design/standard/templates/class/edit_locked.tpl	(revision 0)
 @@ -0,0 +1,62 @@
 +<div class="message-warning">
 +
@@ -525,6 +567,18 @@ Index: design/admin/templates/class/edit_locked.tpl
 +</div>
 +
 +</form>
+Index: autoload/ezp_kernel.php
+===================================================================
+--- autoload/ezp_kernel.php	(revision 24473)
++++ autoload/ezp_kernel.php	(working copy)
+@@ -71,6 +71,7 @@
+       'eZContentClassAttribute'                            => 'kernel/classes/ezcontentclassattribute.php',
+       'eZContentClassAttributeNameList'                    => 'kernel/classes/ezcontentclassattributenamelist.php',
+       'eZContentClassClassGroup'                           => 'kernel/classes/ezcontentclassclassgroup.php',
++      'eZContentClassEditHandler'                          => 'kernel/classes/ezcontentclassedithandler.php',
+       'eZContentClassGroup'                                => 'kernel/classes/ezcontentclassgroup.php',
+       'eZContentClassName'                                 => 'kernel/classes/ezcontentclassname.php',
+       'eZContentClassNameList'                             => 'kernel/classes/ezcontentclassnamelist.php',
 Index: design/admin/templates/class/view.tpl
 ===================================================================
 --- design/admin/templates/class/view.tpl	(revision 24473)
