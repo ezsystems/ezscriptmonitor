@@ -2,54 +2,85 @@ Index: kernel/classes/ezdatatype.php
 ===================================================================
 --- kernel/classes/ezdatatype.php	(revision 24473)
 +++ kernel/classes/ezdatatype.php	(working copy)
-@@ -674,11 +674,54 @@
+@@ -666,19 +666,82 @@
+     }
+ 
+ 
+-    /*!
+-     \note Transaction unsafe. If you call several transaction unsafe methods you must enclose
+-     the calls within a db transaction; thus within db->begin and db->commit.
++    /**
++     * @note Transaction unsafe. If you call several transaction unsafe methods you must enclose
++     *       the calls within a db transaction; thus within db->begin and db->commit.
++     *
++     * @param eZContentClassAttribute $classAttribute Content class attribute of the datatype
+      */
+     function storeDefinedClassAttribute( $classAttribute )
      {
      }
  
-+    /*!
-+     \note Transaction unsafe. If you call several transaction unsafe methods you must enclose
-+     the calls within a db transaction; thus within db->begin and db->commit.
++    /**
++     * @note Transaction unsafe. If you call several transaction unsafe methods you must enclose
++     *       the calls within a db transaction; thus within db->begin and db->commit.
++     * @param eZContentClassAttribute $classAttribute Content class attribute of the datatype
 +     */
 +    function storeModifiedClassAttribute( $classAttribute )
 +    {
 +    }
 +
-+    /*!
-+     \note Transaction unsafe. If you call several transaction unsafe methods you must enclose
-+     the calls within a db transaction; thus within db->begin and db->commit.
++    /**
++     * @note Transaction unsafe. If you call several transaction unsafe methods you must enclose
++     *       the calls within a db transaction; thus within db->begin and db->commit.
++     * @param eZContentClassAttribute $classAttribute Content class attribute of the datatype
++     * @param int $version Version of the attribute to be stored
 +     */
 +    function storeVersionedClassAttribute( $classAttribute, $version )
 +    {
-+        switch ($version) {
++        switch ( $version )
++        {
 +            case eZContentClass::VERSION_STATUS_DEFINED:
-+                $this->storeDefinedClassAttribute($classAttribute);
++                $this->storeDefinedClassAttribute( $classAttribute );
 +                break;
 +
 +            case eZContentClass::VERSION_STATUS_MODIFIED:
-+                $this->storeModifiedClassAttribute($classAttribute);
++                $this->storeModifiedClassAttribute( $classAttribute );
 +                break;
 +        }
 +    }
 +
++    /**
++     * @param eZContentClassAttribute $classAttribute Content class attribute of the datatype
++     */
      function preStoreDefinedClassAttribute( $classAttribute )
      {
          $this->preStoreClassAttribute( $classAttribute, $classAttribute->attribute( 'version' ) );
      }
  
++    /**
++     * @param eZContentClassAttribute $classAttribute Content class attribute of the datatype
++     */
 +    function preStoreModifiedClassAttribute( $classAttribute )
 +    {
 +        $this->preStoreClassAttribute( $classAttribute, $classAttribute->attribute( 'version' ) );
 +    }
 +
++    /**
++     * Hook function which is called before an content class attribute is stored
++     *
++     * @see eZContentClassAttribute::storeVersioned()
++     * @param eZContentClassAttribute $classAttribute Content class attribute of the datatype
++     * @param int $version Version of the attribute to be stored
++     */
 +    function preStoreVersionedClassAttribute( $classAttribute, $version )
 +    {
-+        switch ($version) {
++        switch ( $version )
++        {
 +            case eZContentClass::VERSION_STATUS_DEFINED:
-+                $this->preStoreDefinedClassAttribute($classAttribute);
++                $this->preStoreDefinedClassAttribute( $classAttribute );
 +                break;
 +
 +            case eZContentClass::VERSION_STATUS_MODIFIED:
-+                $this->preStoreModifiedClassAttribute($classAttribute);
++                $this->preStoreModifiedClassAttribute( $classAttribute );
 +                break;
 +        }
 +    }
@@ -70,7 +101,7 @@ Index: kernel/classes/ezcontentclass.php
              return false;
  
          if ( is_array( $removeAttributes ) or $removeAttributes )
-@@ -990,51 +990,68 @@
+@@ -990,51 +990,71 @@
          $this->setAttribute( 'creator_id', $userID );
      }
  
@@ -83,7 +114,8 @@ Index: kernel/classes/ezcontentclass.php
 +    /**
 +     * Stores the current class as a defined version, updates the contentobject_name
 +     * attribute and recreates the class group entries.
-+     * It will remove any existing temporary or defined classes before storing.
++     *
++     * @note It will remove any existing temporary or defined classes before storing.
 +     *
 +     * @param array $attributes array of attributes of the content class
 +     */
@@ -95,7 +127,8 @@ Index: kernel/classes/ezcontentclass.php
 +    /**
 +     * Stores the current class as a modified version, updates the contentobject_name
 +     * attribute and recreates the class group entries.
-+     * It will remove classes in the previous and specified version before storing.
++     *
++     * @note It will remove classes in the previous and specified version before storing.
 +     * 
 +     * @param array $attributes array of attributes
 +     * @param int $version version status
@@ -103,7 +136,8 @@ Index: kernel/classes/ezcontentclass.php
 +     */
 +    public function storeVersioned( $attributes, $version )
 +    {
-+        switch ( $version ) {
++        switch ( $version )
++        {
 +            case self::VERSION_STATUS_DEFINED:
 +                $previousVersion = self::VERSION_STATUS_MODIFIED;
 +                break;
@@ -169,7 +203,7 @@ Index: kernel/classes/ezcontentclassedithandler.php
 ===================================================================
 --- kernel/classes/ezcontentclassedithandler.php	(revision 0)
 +++ kernel/classes/ezcontentclassedithandler.php	(revision 0)
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,91 @@
 +<?php
 +//
 +// Definition of eZContentClassEditHandler class
@@ -219,21 +253,21 @@ Index: kernel/classes/ezcontentclassedithandler.php
 +        // Delete object attributes which have been removed.
 +        foreach ( $oldClassAttributes as $oldClassAttribute )
 +        {
-+            $attributeExist = false;
++            $attributeExists = false;
 +            $oldClassAttributeID = $oldClassAttribute->attribute( 'id' );
 +            foreach ( $class->fetchAttributes( ) as $newClassAttribute )
 +            {
-+                $newClassAttributeID = $newClassAttribute->attribute( 'id' );
-+                if ( $oldClassAttributeID == $newClassAttributeID )
-+                    $attributeExist = true;
-+            }
-+            if ( !$attributeExist )
-+            {
-+                $objectAttributes = eZContentObjectAttribute::fetchSameClassAttributeIDList( $oldClassAttributeID );
-+                foreach ( $objectAttributes as $objectAttribute )
++                if ( $oldClassAttributeID == $newClassAttribute->attribute( 'id' ) )
 +                {
-+                    $objectAttributeID = $objectAttribute->attribute( 'id' );
-+                    $objectAttribute->removeThis( $objectAttributeID );
++                    $attributeExists = true;
++                    break;
++                }
++            }
++            if ( !$attributeExists )
++            {
++                foreach ( eZContentObjectAttribute::fetchSameClassAttributeIDList( $oldClassAttributeID ) as $objectAttribute )
++                {
++                    $objectAttribute->removeThis( $objectAttribute->attribute( 'id' ) );
 +                }
 +            }
 +        }
@@ -242,18 +276,17 @@ Index: kernel/classes/ezcontentclassedithandler.php
 +        // Add object attributes which have been added.
 +        foreach ( $attributes as $newClassAttribute )
 +        {
-+            $attributeExist = false;
++            $attributeExists = false;
 +            $newClassAttributeID = $newClassAttribute->attribute( 'id' );
 +            foreach ( $oldClassAttributes as $oldClassAttribute )
 +            {
-+                $oldClassAttributeID = $oldClassAttribute->attribute( 'id' );
-+                if ( $oldClassAttributeID == $newClassAttributeID )
++                if ( $newClassAttributeID == $oldClassAttribute->attribute( 'id' ) )
 +                {
-+                    $attributeExist = true;
++                    $attributeExists = true;
 +                    break;
 +                }
 +            }
-+            if ( !$attributeExist )
++            if ( !$attributeExists )
 +            {
 +                $newClassAttribute->initializeObjectAttributes( $objects );
 +            }
@@ -277,8 +310,8 @@ Index: kernel/classes/ezcontentclassattribute.php
 +    /**
 +     * Store the content class in the version status "defined".
 +     *
-+     * Note: Transaction unsafe. If you call several transaction unsafe methods you must enclose
-+     * the calls within a db transaction; thus within db->begin and db->commit.
++     * @note Transaction unsafe. If you call several transaction unsafe methods you must enclose
++     *       the calls within a db transaction; thus within db->begin and db->commit.
 +     *
 +     * @return null|false false if the operation failed
       */
@@ -290,8 +323,8 @@ Index: kernel/classes/ezcontentclassattribute.php
 +    /**
 +     * Store the content class in the specified version status.
 +     * 
-+     * Note: Transaction unsafe. If you call several transaction unsafe methods you must enclose
-+     * the calls within a db transaction; thus within db->begin and db->commit.
++     * @note Transaction unsafe. If you call several transaction unsafe methods you must enclose
++     *       the calls within a db transaction; thus within db->begin and db->commit.
 +     *
 +     * @param int $version version status
 +     * @since Version 4.3
@@ -452,7 +485,7 @@ Index: kernel/class/edit.php
 -            }
 +            eZExtension::getHandlerClass( new ezpExtensionOptions( array( 'iniFile' => 'site.ini',
 +                                                                          'iniSection'   => 'ContentSettings',
-+                                                                          'iniVariable'  => 'ContentClassEditHandler') ) )
++                                                                          'iniVariable'  => 'ContentClassEditHandler' ) ) )
 +                    ->store( $class, $attributes, $unorderedParameters );
          }
          else
@@ -493,8 +526,8 @@ Index: settings/site.ini
  # and generation is taken over by the requesting process
  CacheGenerationTimeout=60
 +# Handler responsible of storing changes made on a content class when objects exist
-+# and requires an update. As this might be a huge task that can lead to time out,
-+# you may consider to use the 'eZContentClassEditDeferredHandler' provided with the
++# and require an update. This might be a huge task that can lead to time out,
++# you may consider using the 'eZContentClassEditDeferredHandler' provided with the
 +# eZ Script Monitor extension.
 +ContentClassEditHandler=eZContentClassEditHandler
  
