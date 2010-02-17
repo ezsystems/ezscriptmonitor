@@ -113,7 +113,7 @@ class eZScheduledScript extends eZPersistentObject
             return $this->ProcessID;
         }
 
-        return ezi18n( 'ezscriptmonitor', 'n/a' );
+        return eZi18n::translate( 'ezscriptmonitor', 'n/a' );
     }
 
     /*!
@@ -153,7 +153,7 @@ class eZScheduledScript extends eZPersistentObject
     {
         if ( $this->Progress == self::PROGRESS_UNKNOWN )
         {
-            return ezi18n( 'ezscriptmonitor', 'Unknown' );
+            return eZi18n::translate( 'ezscriptmonitor', 'Unknown' );
         }
 
         if ( $this->Progress < 0 )
