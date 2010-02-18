@@ -12,6 +12,6 @@ $tpl->setVariable( 'scripts', $scripts );
 $Result = array();
 $Result['content'] = $tpl->fetch( 'design:scriptmonitor/list.tpl' );
 $Result['path'] = array( array( 'url' => false,
-                                'text' => eZi18n::translate( 'ezscriptmonitor', 'Script monitor' ) ) );
+                                'text' => ezpI18n::translate( 'ezscriptmonitor', 'Script monitor' ) ) );
 
 ?>

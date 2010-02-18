@@ -7,7 +7,7 @@ $script = eZScheduledScript::fetch( $scriptID );
 if ( is_object( $script ) )
     $scriptName = $script->attribute( 'name' );
 else
-    $scriptName = eZi18n::translate( 'ezscriptmonitor', 'Script not found' );
+    $scriptName = ezpI18n::translate( 'ezscriptmonitor', 'Script not found' );
 
 require_once( "kernel/common/template.php" );
 $tpl = templateInit();
@@ -17,7 +17,7 @@ $tpl->setVariable( 'script', $script );
 $Result = array();
 $Result['content'] = $tpl->fetch( 'design:scriptmonitor/view.tpl' );
 $Result['path'] = array( array( 'url' => '/scriptmonitor/list/',
-                                'text' => eZi18n::translate( 'ezscriptmonitor', 'Script monitor' ) ),
+                                'text' => ezpI18n::translate( 'ezscriptmonitor', 'Script monitor' ) ),
                          array( 'url' => false,
                                 'text' => $scriptName ) );
 
