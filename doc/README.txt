@@ -1,7 +1,7 @@
 README
 ------
 Gunnstein Lye <gl@ez.no>
-v0.3
+v0.4
 
 This extension aims to avoid timeout problems and database corruption by
 moving long running processes from the GUI to the background.
