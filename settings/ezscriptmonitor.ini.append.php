@@ -2,6 +2,6 @@
 
 [GeneralSettings]
 ScriptSiteAccess=ezwebin_site_admin
-PhpCliCommand=/usr/local/php5/bin/php
+PhpCliCommand=/usr/bin/php
 
 */ ?>
