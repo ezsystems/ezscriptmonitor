@@ -1,4 +1,11 @@
 <?php
+/**
+ * File containing runscheduledscripts.php cronjob.
+ *
+ * @copyright Copyright (C) 1999-2010 eZ Systems AS. All rights reserved.
+ * @license http://ez.no/licenses/gnu_gpl GNU GPLv2
+ *
+ */
 
 // Fetch all scripts that have not been started yet, and start them
 $notStartedScripts = eZScheduledScript::fetchNotStartedScripts();
