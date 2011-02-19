@@ -39,10 +39,10 @@ class eZScriptMonitorInfo
     {
         return array(
             'Name' => "eZ Script Monitor",
-            'Version' => '1.1-0',
+            'Version' => '//autogentag//',
             'Copyright' => "Copyright (C) 1999-2010 eZ Systems AS.",
             'Info_url' => "http://ez.no/",
-            'License' => "GNU General Public License v2.0");
+            'License' => "//EZP_LICENSE//");
     }
 }
 
