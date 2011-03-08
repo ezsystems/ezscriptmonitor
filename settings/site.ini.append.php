@@ -7,4 +7,7 @@
 # web site.
 ContentClassEditHandler=eZContentClassEditDeferredHandler
 
+[RegionalSettings]
+TranslationExtensions[]=ezscriptmonitor
+
 */ ?>
