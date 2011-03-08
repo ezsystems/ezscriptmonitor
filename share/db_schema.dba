@@ -1,0 +1,82 @@
+<?php
+// This array contains the database schema
+$schema = array (
+  'ezscheduled_script' => 
+  array (
+    'name' => 'ezscheduled_script',
+    'fields' => 
+    array (
+      'command' => 
+      array (
+        'length' => 255,
+        'type' => 'varchar',
+        'not_null' => '1',
+        'default' => '',
+      ),
+      'id' => 
+      array (
+        'type' => 'auto_increment',
+        'default' => false,
+      ),
+      'last_report_timestamp' => 
+      array (
+        'length' => 11,
+        'type' => 'int',
+        'not_null' => '1',
+        'default' => 0,
+      ),
+      'name' => 
+      array (
+        'length' => 50,
+        'type' => 'varchar',
+        'not_null' => '1',
+        'default' => '',
+      ),
+      'process_id' => 
+      array (
+        'length' => 11,
+        'type' => 'int',
+        'not_null' => '1',
+        'default' => 0,
+      ),
+      'progress' => 
+      array (
+        'length' => 3,
+        'type' => 'int',
+        'default' => 0,
+      ),
+      'user_id' => 
+      array (
+        'length' => 11,
+        'type' => 'int',
+        'not_null' => '1',
+        'default' => 0,
+      ),
+    ),
+    'indexes' => 
+    array (
+      'PRIMARY' => 
+      array (
+        'type' => 'primary',
+        'fields' => 
+        array (
+          0 => 'id',
+        ),
+      ),
+      'ezscheduled_script_timestamp' => 
+      array (
+        'type' => 'non-unique',
+        'fields' => 
+        array (
+          0 => 'last_report_timestamp',
+        ),
+      ),
+    ),
+  ),
+  '_info' => 
+  array (
+    'format' => 'generic',
+  ),
+);
+
+?>

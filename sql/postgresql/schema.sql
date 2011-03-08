@@ -1,3 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
 CREATE SEQUENCE ezscheduled_script_s
     START 1
     INCREMENT 1
@@ -5,17 +16,44 @@ CREATE SEQUENCE ezscheduled_script_s
     MINVALUE 1
     CACHE 1;
 
+
+
+
+
+
+
 CREATE TABLE ezscheduled_script (
-  id                    integer DEFAULT nextval('ezscheduled_script_s'::text) NOT NULL,
-  process_id            INT   DEFAULT '0'   NOT NULL,
-  NAME                  VARCHAR(50)   DEFAULT ''   NOT NULL,
-  command               VARCHAR(255)   NOT NULL,
-  last_report_timestamp INT   DEFAULT '0'   NOT NULL,
-  progress              SMALLINT   DEFAULT '0'   NOT NULL,
-  user_id               INT   DEFAULT '0'   NOT NULL,
-  CONSTRAINT pk_ezscheduled_script PRIMARY KEY ( id ));
+    command character varying(255) DEFAULT ''::character varying NOT NULL,
+    id integer DEFAULT nextval('ezscheduled_script_s'::text) NOT NULL,
+    last_report_timestamp integer DEFAULT 0 NOT NULL,
+    name character varying(50) DEFAULT ''::character varying NOT NULL,
+    process_id integer DEFAULT 0 NOT NULL,
+    progress integer DEFAULT 0,
+    user_id integer DEFAULT 0 NOT NULL
+);
 
-CREATE INDEX ezscheduled_script_timestamp ON ezscheduled_script (
-      last_report_timestamp);
 
-SELECT setval('ezscheduled_script_s', max(id)) , 'ezscheduled_script' as tablename FROM ezscheduled_script;
+
+
+
+
+
+CREATE INDEX ezscheduled_script_timestamp ON ezscheduled_script USING btree (last_report_timestamp);
+
+
+
+
+
+
+
+
+ALTER TABLE ONLY ezscheduled_script
+    ADD CONSTRAINT ezscheduled_script_pkey PRIMARY KEY (id);
+
+
+
+
+
+
+
+

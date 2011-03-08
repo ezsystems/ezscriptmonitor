@@ -1,22 +1,23 @@
+CREATE SEQUENCE s_scheduled_script;
+
 CREATE TABLE ezscheduled_script (
-  id                    INT    NOT NULL,
-  process_id            INT    DEFAULT 0    NOT NULL,
-  NAME                  VARCHAR2(50)    DEFAULT ''    NOT NULL,
-  command               VARCHAR2(255)    NOT NULL,
-  last_report_timestamp INT    DEFAULT 0    NOT NULL,
-  progress              INT    DEFAULT 0    NOT NULL,
-  user_id               INT    DEFAULT 0    NOT NULL,
-  CONSTRAINT pk_ezscheduled_script PRIMARY KEY ( id ));
-
-CREATE INDEX ezscheduled_script_timestamp ON ezscheduled_script (last_report_timestamp);
-
-CREATE SEQUENCE s_ezscheduled_script;
+  command VARCHAR2(255) NOT NULL,
+  id INTEGER NOT NULL,
+  last_report_timestamp INTEGER DEFAULT 0 NOT NULL,
+  name VARCHAR2(50) NOT NULL,
+  process_id INTEGER DEFAULT 0 NOT NULL,
+  progress INTEGER DEFAULT 0,
+  user_id INTEGER DEFAULT 0 NOT NULL,
+  PRIMARY KEY ( id )
+);
 
 CREATE OR REPLACE TRIGGER ezscheduled_script_id_tr
-   BEFORE INSERT ON ezscheduled_script FOR EACH ROW WHEN ( NEW.id IS NULL )
-   BEGIN
-      SELECT seq_ezscheduled_script.nextval
-      INTO :new.id
-      FROM dual;
-   END;
+BEFORE INSERT ON ezscheduled_script FOR EACH ROW WHEN (new.id IS NULL)
+BEGIN
+  SELECT s_scheduled_script.nextval INTO :new.id FROM dual;
+END;
 /
+
+CREATE INDEX ezscheduled_script_timestamp ON ezscheduled_script ( last_report_timestamp );
+
+
