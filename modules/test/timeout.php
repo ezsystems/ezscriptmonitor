@@ -8,14 +8,13 @@
  */
 // This will time out
 
-include_once( 'kernel/common/template.php' );
 
 while ( true )
 {
     $variable = 'text' + 42;
 }
 
-$tpl = templateInit();
+$tpl = eZTemplate::factory();
 
 $Result = array();
 $Result['content'] = $tpl->fetch( 'design:test/timeout.tpl' );

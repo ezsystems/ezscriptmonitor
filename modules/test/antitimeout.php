@@ -9,13 +9,12 @@
 
 // This will exit gracefully before timeout occurs
 
-include_once( 'kernel/common/template.php' );
 
 $startTime = time();
 $executionTime = 0;
 $phpTimeoutLimit = ini_get( 'max_execution_time' );
 
-$tpl = templateInit();
+$tpl = eZTemplate::factory();
 
 while ( true )
 {

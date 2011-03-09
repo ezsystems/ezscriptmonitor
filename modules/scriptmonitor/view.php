@@ -16,8 +16,7 @@ if ( is_object( $script ) )
 else
     $scriptName = ezpI18n::tr( 'ezscriptmonitor', 'Script not found' );
 
-require_once( "kernel/common/template.php" );
-$tpl = templateInit();
+$tpl = eZTemplate::factory();
 $tpl->setVariable( 'module', $Module );
 $tpl->setVariable( 'script', $script );
 
