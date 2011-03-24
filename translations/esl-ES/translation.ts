@@ -1,22 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="es_ES">
+<TS version="2.0">
 <context>
     <name>ezscriptmonitor</name>
     <message>
-        <location filename="ezscheduledscript.php" line="123"/>
         <source>n/a</source>
-        <translation>n/a</translation>
+        <translation type="unfinished">n/a</translation>
     </message>
     <message>
-        <location filename="ezscheduledscript.php" line="163"/>
-        <location filename="ezscheduledscript.php" line="0"/>
         <source>Unknown</source>
         <translation>Desconocido</translation>
     </message>
     <message>
-        <location filename="list.php" line="22"/>
-        <location filename="view.php" line="27"/>
         <source>Script monitor</source>
         <translation>Monitor de scripts</translation>
     </message>
@@ -101,7 +96,6 @@
         <translation>¡El script no existe!</translation>
     </message>
     <message>
-        <location filename="view.php" line="17"/>
         <source>Script not found</source>
         <translation>Script no encontrado</translation>
     </message>

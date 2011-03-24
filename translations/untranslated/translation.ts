@@ -4,19 +4,10 @@
 <context>
     <name>ezscriptmonitor</name>
     <message>
-        <location filename="ezscheduledscript.php" line="123"/>
-        <source>n/a</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="ezscheduledscript.php" line="163"/>
-        <location line="0"/>
         <source>Unknown</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="list.php" line="22"/>
-        <location filename="view.php" line="27"/>
         <source>Script monitor</source>
         <translation type="unfinished"></translation>
     </message>
@@ -101,8 +92,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="view.php" line="17"/>
         <source>Script not found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>n/a</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
