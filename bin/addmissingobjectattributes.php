@@ -211,17 +211,14 @@ if ( $siteAccess )
 
 function changeSiteAccessSetting( $siteAccess )
 {
-    global $isQuiet;
     $cli = eZCLI::instance();
     if ( file_exists( 'settings/siteaccess/' . $siteAccess ) )
     {
-        if ( !$isQuiet )
-            $cli->notice( "Using siteaccess $siteAccess" );
+        $cli->output( "Using siteaccess $siteAccess" );
     }
     else
     {
-        if ( !$isQuiet )
-            $cli->notice( "Siteaccess $siteAccess does not exist, using default siteaccess" );
+        $cli->notice( "Siteaccess $siteAccess does not exist, using default siteaccess" );
     }
 }
 

@@ -146,21 +146,16 @@ $dbName = $options['db-database'] ? $options['db-database'] : false;
 $dbImpl = $options['db-driver'] ? $options['db-driver'] : false;
 $siteAccess = $options['siteaccess'] ? $options['siteaccess'] : false;
 
-if ( !isset( $isQuiet )  )
-    $isQuiet = false;
-
 if ( $siteAccess )
 {
     $cli = eZCLI::instance();
     if ( file_exists( 'settings/siteaccess/' . $siteAccess ) )
     {
-        if ( !$isQuiet )
-            $cli->notice( "Using siteaccess $siteAccess" );
+        $cli->output( "Using siteaccess $siteAccess" );
     }
     else
     {
-        if ( !$isQuiet )
-            $cli->notice( "Siteaccess $siteAccess does not exist, using default siteaccess" );
+        $cli->notice( "Siteaccess $siteAccess does not exist, using default siteaccess" );
     }
 }
 
@@ -216,7 +211,7 @@ else
     $cli->notice( 'The classid parameter was not given, will check all classes.' );
     foreach ( eZContentClass::fetchList( eZContentClass::VERSION_STATUS_MODIFIED, false ) as $class )
     {
-        $cli->notice( 'Checking class with ID: ' . $class['id'] );
+        $cli->output( 'Checking class with ID: ' . $class['id'] );
         updateClass( $class['id'], $scheduledScript );
     }
     
