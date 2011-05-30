@@ -207,14 +207,14 @@ if ( isset( $options['classid'] ) )
 }
 else
 {
-    
+
     $cli->notice( 'The classid parameter was not given, will check all classes.' );
     foreach ( eZContentClass::fetchList( eZContentClass::VERSION_STATUS_MODIFIED, false ) as $class )
     {
         $cli->output( 'Checking class with ID: ' . $class['id'] );
         updateClass( $class['id'], $scheduledScript );
     }
-    
+
 }
 
 $script->shutdown();
