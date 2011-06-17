@@ -148,8 +148,10 @@ $siteAccess = $options['siteaccess'] ? $options['siteaccess'] : false;
 
 if ( $siteAccess )
 {
+    $ini = eZINI::instance();
     $cli = eZCLI::instance();
-    if ( file_exists( 'settings/siteaccess/' . $siteAccess ) )
+    $availableSiteAccessList = $ini->variable( 'SiteAccessSettings', 'AvailableSiteAccessList' );
+    if ( in_array( $siteaccess, $availableSiteAccessList ) )
     {
         $cli->output( "Using siteaccess $siteAccess" );
     }
