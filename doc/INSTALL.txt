@@ -1,7 +1,6 @@
 INSTALL
 -------
 Gunnstein Lye <gl@ez.no>
-v0.4
 
 1. Unpack the extension and place it in your extension directory (as with all
    extensions).
@@ -19,6 +18,5 @@ v0.4
 6. Enable the extension (as with all extensions).
 
 7. Apply the patches for those parts of the system you want script monitoring
-   for, see the patches directory. (Currently this is only possible for class
-   editing and subtree removal.) The patches are against current trunk,
-   r23534.
+   for, see the patches directory. (Currently there is only one patch here,
+   for subtree removal.)
