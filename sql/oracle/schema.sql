@@ -4,7 +4,7 @@ CREATE TABLE ezscheduled_script (
   command VARCHAR2(255) NOT NULL,
   id INTEGER NOT NULL,
   last_report_timestamp INTEGER DEFAULT 0 NOT NULL,
-  name VARCHAR2(50) NOT NULL,
+  name VARCHAR2(255) NOT NULL,
   process_id INTEGER DEFAULT 0 NOT NULL,
   progress INTEGER DEFAULT 0,
   user_id INTEGER DEFAULT 0 NOT NULL,

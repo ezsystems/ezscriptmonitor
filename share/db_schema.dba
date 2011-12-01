@@ -8,8 +8,7 @@ $schema = array (
     array (
       'command' => 
       array (
-        'length' => 255,
-        'type' => 'varchar',
+        'type' => 'text',
         'not_null' => '1',
         'default' => '',
       ),
@@ -27,7 +26,7 @@ $schema = array (
       ),
       'name' => 
       array (
-        'length' => 50,
+        'length' => 255,
         'type' => 'varchar',
         'not_null' => '1',
         'default' => '',

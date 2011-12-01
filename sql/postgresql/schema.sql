@@ -26,7 +26,7 @@ CREATE TABLE ezscheduled_script (
     command character varying(255) DEFAULT ''::character varying NOT NULL,
     id integer DEFAULT nextval('ezscheduled_script_s'::text) NOT NULL,
     last_report_timestamp integer DEFAULT 0 NOT NULL,
-    name character varying(50) DEFAULT ''::character varying NOT NULL,
+    name character varying(255) DEFAULT ''::character varying NOT NULL,
     process_id integer DEFAULT 0 NOT NULL,
     progress integer DEFAULT 0,
     user_id integer DEFAULT 0 NOT NULL
