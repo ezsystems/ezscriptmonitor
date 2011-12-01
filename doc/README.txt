@@ -58,8 +58,12 @@ of the system, the following must be done:
                                        'path/to/your/script/' . eZScheduledScript::SCRIPT_NAME_STRING .
                                        ' -s ' . eZScheduledScript::SITE_ACCESS_STRING .
                                        ' --your-script-parameters=42',
-                                       eZScheduledScript::TYPE_PHP );
+                                       $userID );
   $script->store();
+
+  The third parameter $userID is optional.
+  This is the eZ Publish user ID of the user starting the script.
+  If not supplied, the current user is chosen instead.
 
   Then the GUI module should return and inform the user that the process will
   be executed in the background, and provide a link to the script monitor page
