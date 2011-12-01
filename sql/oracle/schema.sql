@@ -1,7 +1,7 @@
 CREATE SEQUENCE s_scheduled_script;
 
 CREATE TABLE ezscheduled_script (
-  command VARCHAR2(255) NOT NULL,
+  command VARCHAR2(2000) NOT NULL,
   id INTEGER NOT NULL,
   last_report_timestamp INTEGER DEFAULT 0 NOT NULL,
   name VARCHAR2(255) NOT NULL,
