@@ -58,7 +58,7 @@ of the system, the following must be done:
                                        'path/to/your/script/' . eZScheduledScript::SCRIPT_NAME_STRING .
                                        ' -s ' . eZScheduledScript::SITE_ACCESS_STRING .
                                        ' --your-script-parameters=42',
-                                       eZScheduledScript::TYPE_PHP );
+                                       eZUser::currentUserID() );
   $script->store();
 
   Then the GUI module should return and inform the user that the process will
