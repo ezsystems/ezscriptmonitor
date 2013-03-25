@@ -80,10 +80,22 @@ function updateClass( $classId, $scheduledScript )
         }
         if ( !$attributeExist )
         {
-            foreach ( eZContentObjectAttribute::fetchSameClassAttributeIDList( $oldClassAttributeID ) as $objectAttribute )
+            $objectLimit = 50;
+            $limit = array( 'offset' => 0 , 'length' => $objectLimit );
+            do
             {
-                $objectAttribute->removeThis( $objectAttribute->attribute( 'id' ) );
-            }
+                $objectAttributes = eZContentObjectAttribute::fetchSameClassAttributeIDList( $oldClassAttributeID, true, false, false, $limit );
+                $objectAttributeCount = count( $objectAttributes );
+                if ( is_array( $objectAttributes ) && $objectAttributeCount > 0 )
+                {
+                    $db = eZDB::instance();
+                    $db->begin();
+                    foreach ( $objectAttributes as $objectAttribute )
+                        $objectAttribute->removeThis( $objectAttribute->attribute( 'id' ) );
+                    $db->commit();
+                    $limit['offset'] += $objectAttributeCount;
+                }
+            } while ( $objectAttributeCount == $objectLimit );
         }
     }
     $class->storeVersioned( $attributes, eZContentClass::VERSION_STATUS_DEFINED );
