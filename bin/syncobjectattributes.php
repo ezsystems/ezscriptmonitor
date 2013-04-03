@@ -81,12 +81,12 @@ function updateClass( $classId, $scheduledScript )
         if ( !$attributeExist )
         {
             $objectLimit = 50;
-            $limit = array( 'offset' => 0 , 'length' => $objectLimit);
-            do {
-                $objectAttributes = eZContentObjectAttribute::fetchSameClassAttributeIDList( $oldClassAttributeID ,
-                    true, false, false, $limit );
+            $limit = array( 'offset' => 0 , 'length' => $objectLimit );
+            do
+            {
+                $objectAttributes = eZContentObjectAttribute::fetchSameClassAttributeIDList( $oldClassAttributeID, true, false, false, $limit );
                 $objectAttributeCount = count( $objectAttributes );
-                if ( is_array($objectAttributes) && $objectAttributeCount > 0)
+                if ( is_array( $objectAttributes ) && $objectAttributeCount > 0 )
                 {
                     $db = eZDB::instance();
                     $db->begin();
