@@ -89,7 +89,7 @@ function updateClass( $classId, $scheduledScript )
             $limit = array( 'offset' => 0 , 'length' => $objectLimit );
             do
             {
-                $objectAttributes = eZContentObjectAttribute::fetchSameClassAttributeIDList( $oldClassAttributeID, true, false, false, $limit );
+                $objectAttributes = eZContentObjectAttribute::fetchSameClassAttributeIDList( $oldClassAttributeID, false, false, false, $limit );
                 $objectAttributeCount = count( $objectAttributes );
 
                 $conditions = array( "contentclassattribute_id" => $oldClassAttributeID );
@@ -106,6 +106,7 @@ function updateClass( $classId, $scheduledScript )
 
                     foreach ( $objectAttributes as $objectAttribute )
                     {
+                        $objectAttribute = new eZContentObjectAttribute( $objectAttribute );
                         $objectAttribute->removeThis( $objectAttribute->attribute( 'id' ) );
                     }
 
