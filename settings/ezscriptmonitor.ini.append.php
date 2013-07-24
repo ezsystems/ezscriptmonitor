@@ -3,5 +3,6 @@
 [GeneralSettings]
 ScriptSiteAccess=ezwebin_site_admin
 PhpCliCommand=/usr/bin/php
+ObjectLimit=500
 
 */ ?>

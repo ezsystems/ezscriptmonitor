@@ -84,7 +84,8 @@ function updateClass( $classId, $scheduledScript )
 
         if ( !$attributeExist )
         {
-            $objectLimit = 500;
+            $ezscriptmonitorINI = eZINI::instance( 'ezscriptmonitor.ini' );
+            $objectLimit = $ezscriptmonitorINI->variable( 'GeneralSettings', 'ObjectLimit' );
             $limit = array( 'offset' => 0 , 'length' => $objectLimit );
             do
             {
