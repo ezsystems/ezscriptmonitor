@@ -40,10 +40,8 @@
 require 'autoload.php';
 
 
-function updateClass( $classId )
+function updateClass( $classId, $cli, $db, $scheduledScript )
 {
-    global $cli, $script, $db, $scheduledScript;
-
     // If the class is not stored yet, store it now
     $class = eZContentClass::fetch( $classId, true, eZContentClass::VERSION_STATUS_TEMPORARY );
     if ( $class )
@@ -277,7 +275,7 @@ if ( isset( $options['scriptid'] ) and
 // Do the update
 if ( isset( $options['classid'] ) )
 {
-    updateClass( $options['classid'] );
+    updateClass( $options['classid'], $cli, $db, $scheduledScript );
 }
 else
 {
@@ -286,7 +284,7 @@ else
     foreach ( $classes as $class )
     {
         $cli->notice( 'Checking class ' . $class['id'] . ': ' . $class['name'] );
-        updateClass( $class['id'] );
+        updateClass( $class['id'], $cli, $db, $scheduledScript );
     }
 }
 
