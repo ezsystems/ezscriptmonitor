@@ -50,6 +50,9 @@ class eZScheduledScript extends eZPersistentObject
             return false;
         }
 
+        $name = trim( $name );
+        $command = trim( $command );
+
         if ( !$userID )
         {
             $userID = eZUser::currentUserID();
@@ -59,6 +62,12 @@ class eZScheduledScript extends eZPersistentObject
         $scriptSiteAccess = $scriptMonitorIni->variable( 'GeneralSettings', 'ScriptSiteAccess' );
         $command = str_replace( self::SCRIPT_NAME_STRING, $name, $command );
         $command = str_replace( self::SITE_ACCESS_STRING, $scriptSiteAccess, $command );
+
+        if ( strlen( $command ) > 2000 )
+        {
+            eZDebug::writeError( 'Your command string is too long, it must be less than 2000 characters.', 'ezscriptmonitor' );
+            return false;
+        }
 
         // Negative progress means not started yet
         return new self( array( 'name' => $name,
