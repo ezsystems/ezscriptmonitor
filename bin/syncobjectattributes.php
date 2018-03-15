@@ -229,7 +229,7 @@ $db->setIsSQLOutputEnabled( (bool) $options['sql'] );
 // Log in admin user
 $user = eZUser::fetchByName( isset( $options['admin-user'] ) ? $options['admin-user'] : 'admin' );
 if ( $user )
-    eZUser::setCurrentlyLoggedInUser( $user, $user->attribute( 'id' ) );
+    eZUser::setCurrentlyLoggedInUser( $user, $user->attribute( 'contentobject_id' ) );
 else
 {
     $cli->error( 'Could not fetch admin user object' );
